@@ -1,10 +1,14 @@
-use glam::{Vec2, Vec3, Vec3Swizzles, Vec4};
+use glam::{Vec2, Vec3, Vec4};
 
 pub const WIDTH: usize = 640;
 pub const HEIGHT: usize = 360;
 
 pub fn index_to_coords(p: usize, width: usize) -> (usize, usize) {
     (p % width, p / width)
+}
+
+pub fn coords_to_index(x: usize, y: usize, width: usize) -> usize {
+    x + y * width
 }
 
 pub fn to_argb8(a: u8, r: u8, g: u8, b: u8) -> u32 {

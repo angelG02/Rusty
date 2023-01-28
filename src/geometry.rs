@@ -1,6 +1,6 @@
 use glam::{Vec2, Vec3, Vec3Swizzles, Vec4};
-
 use crate::utils::*;
+use crate::texture::*;
 
 pub struct AABB {
     pub min: Vec2,
@@ -30,10 +30,22 @@ impl AABB {
         let v2 = vertices[2];
         let v3 = vertices[3];
 
-        let xmax = f32::max(f32::max(f32::max(v0.position.x, v1.position.x), v2.position.x), v3.position.x);
-        let ymax = f32::max(f32::max(f32::max(v0.position.y, v1.position.y), v2.position.y), v3.position.y);
-        let xmin = f32::max(f32::min(f32::min(v0.position.x, v1.position.x), v2.position.x), v3.position.x);
-        let ymin = f32::max(f32::min(f32::min(v0.position.y, v1.position.y), v2.position.y), v3.position.y);
+        let xmax = f32::max(
+            f32::max(f32::max(v0.position.x, v1.position.x), v2.position.x),
+            v3.position.x,
+        );
+        let ymax = f32::max(
+            f32::max(f32::max(v0.position.y, v1.position.y), v2.position.y),
+            v3.position.y,
+        );
+        let xmin = f32::max(
+            f32::min(f32::min(v0.position.x, v1.position.x), v2.position.x),
+            v3.position.x,
+        );
+        let ymin = f32::max(
+            f32::min(f32::min(v0.position.y, v1.position.y), v2.position.y),
+            v3.position.y,
+        );
 
         AABB {
             min: Vec2::new(xmin, ymin),
@@ -58,11 +70,13 @@ pub trait Shape {
 pub struct Vertex {
     pub position: Vec3,
     pub color: Vec4,
+    pub uv: Vec3,
 }
 
 pub struct Triangle {
     pub vertices: [Vertex; 3],
     pub bounding_box: AABB,
+    pub texture: Option<Texture>,
 }
 
 impl Triangle {
@@ -70,6 +84,15 @@ impl Triangle {
         Triangle {
             vertices,
             bounding_box: AABB::new(&vertices),
+            texture: None,
+        }
+    }
+
+    pub fn new_with_texture(vertices: [Vertex; 3], texture_path: &String) -> Self {
+        Triangle {
+            vertices,
+            bounding_box: AABB::new(&vertices),
+            texture: Some(Texture::load(std::path::Path::new(texture_path))),
         }
     }
 }
@@ -100,14 +123,21 @@ impl Shape for Triangle {
 
                 if depth <= depth_buffer[i] {
                     depth_buffer[i] = depth;
+                    
+                    if self.texture.is_none() {
+                        let color = bary.x * v0.color + bary.y * v1.color + bary.z * v2.color;
+                        buffer[i] = to_argb8(
+                            color.w as u8,
+                            (color.x * 255.0) as u8,
+                            (color.y * 255.0) as u8,
+                            (color.z * 255.0) as u8,
+                        );
+                    } else {
+                        let tex_coords = bary.x * v0.uv + bary.y * v1.uv + bary.z * v2.uv;
+                        let color = self.texture.as_ref().unwrap().argb_at_uv(tex_coords.x, tex_coords.y);
 
-                    let color = bary.x * v0.color + bary.y * v1.color + bary.z * v2.color;
-                    buffer[i] = to_argb8(
-                        color.w as u8,
-                        (color.x * 255.0) as u8,
-                        (color.y * 255.0) as u8,
-                        (color.z * 255.0) as u8,
-                    );
+                        buffer[i] = color;
+                    }
                 }
             }
         }
@@ -130,7 +160,11 @@ pub struct Quad {
 
 impl Quad {
     pub fn new(vertices: [Vertex; 4], indices: [u32; 6]) -> Self {
-        Quad { vertices, indices, bounding_box: AABB::new_box(&vertices) }
+        Quad {
+            vertices,
+            indices,
+            bounding_box: AABB::new_box(&vertices),
+        }
     }
 }
 
@@ -155,7 +189,8 @@ impl Shape for Quad {
     }
 
     fn get_area(&self) -> f32 {
-        (self.bounding_box.max.x - self.bounding_box.min.x) * (self.bounding_box.max.y - self.bounding_box.min.y)
+        (self.bounding_box.max.x - self.bounding_box.min.x)
+            * (self.bounding_box.max.y - self.bounding_box.min.y)
     }
 }
 
