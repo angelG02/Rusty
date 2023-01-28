@@ -24,6 +24,23 @@ impl AABB {
         }
     }
 
+    pub fn new_box(vertices: &[Vertex; 4]) -> Self {
+        let v0 = vertices[0];
+        let v1 = vertices[1];
+        let v2 = vertices[2];
+        let v3 = vertices[3];
+
+        let xmax = f32::max(f32::max(f32::max(v0.position.x, v1.position.x), v2.position.x), v3.position.x);
+        let ymax = f32::max(f32::max(f32::max(v0.position.y, v1.position.y), v2.position.y), v3.position.y);
+        let xmin = f32::max(f32::min(f32::min(v0.position.x, v1.position.x), v2.position.x), v3.position.x);
+        let ymin = f32::max(f32::min(f32::min(v0.position.y, v1.position.y), v2.position.y), v3.position.y);
+
+        AABB {
+            min: Vec2::new(xmin, ymin),
+            max: Vec2::new(xmax, ymax),
+        }
+    }
+
     pub fn intersects(&self, point: Vec2) -> bool {
         point.x as f32 >= self.min.x
             && point.x as f32 <= self.max.x
@@ -63,6 +80,8 @@ impl Shape for Triangle {
         let v1 = &self.vertices[1];
         let v2 = &self.vertices[2];
 
+        let area = self.get_area();
+
         for i in 0..buffer.len() {
             let coords = index_to_coords(i, WIDTH);
 
@@ -73,12 +92,11 @@ impl Shape for Triangle {
                 continue;
             }
 
-            let area = self.get_area();
-
             if let Some(bary) =
                 barycentric_coordinates(coords, v0.position, v1.position, v2.position, area)
             {
-                let depth = bary.x * v0.position.z + bary.y * v1.position.z + bary.z * v2.position.z;
+                let depth =
+                    bary.x * v0.position.z + bary.y * v1.position.z + bary.z * v2.position.z;
 
                 if depth <= depth_buffer[i] {
                     depth_buffer[i] = depth;
@@ -89,7 +107,7 @@ impl Shape for Triangle {
                         (color.x * 255.0) as u8,
                         (color.y * 255.0) as u8,
                         (color.z * 255.0) as u8,
-                );
+                    );
                 }
             }
         }
@@ -101,6 +119,43 @@ impl Shape for Triangle {
             self.vertices[1].position,
             self.vertices[2].position,
         )
+    }
+}
+
+pub struct Quad {
+    vertices: [Vertex; 4],
+    indices: [u32; 6],
+    bounding_box: AABB,
+}
+
+impl Quad {
+    pub fn new(vertices: [Vertex; 4], indices: [u32; 6]) -> Self {
+        Quad { vertices, indices, bounding_box: AABB::new_box(&vertices) }
+    }
+}
+
+impl Shape for Quad {
+    fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>) {
+        let triangle_vertices1: [Vertex; 3] = [
+            self.vertices[self.indices[0] as usize],
+            self.vertices[self.indices[1] as usize],
+            self.vertices[self.indices[2] as usize],
+        ];
+        let triangle_vertices2: [Vertex; 3] = [
+            self.vertices[self.indices[3] as usize],
+            self.vertices[self.indices[4] as usize],
+            self.vertices[self.indices[5] as usize],
+        ];
+
+        let triangle1 = Triangle::new(triangle_vertices1);
+        let triangle2 = Triangle::new(triangle_vertices2);
+
+        triangle1.draw(buffer, depth_buffer);
+        triangle2.draw(buffer, depth_buffer);
+    }
+
+    fn get_area(&self) -> f32 {
+        (self.bounding_box.max.x - self.bounding_box.min.x) * (self.bounding_box.max.y - self.bounding_box.min.y)
     }
 }
 

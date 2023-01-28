@@ -11,50 +11,31 @@ fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
     let mut depth_buffer: Vec<f32> = vec![f32::INFINITY; WIDTH * HEIGHT];
 
-    let vertices1: [Vertex; 3] = [
+    let vertices1: [Vertex; 4] = [
         Vertex {
-            position: Vec3::new((WIDTH / 2) as f32, (HEIGHT / 4) as f32, 1.0),
+            position: Vec3::new(0.0, 0.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
         },
         Vertex {
-            position: Vec3::new((WIDTH / 4) as f32, (HEIGHT - (HEIGHT / 4)) as f32, 1.0),
+            position: Vec3::new(0.0, 300.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
         },
         Vertex {
-            position: Vec3::new(
-                (WIDTH - (WIDTH / 4)) as f32,
-                (HEIGHT - (HEIGHT / 4)) as f32,
-                1.0,
-            ),
+            position: Vec3::new(300.0, 300.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
         },
-    ];
-
-    let vertices2: [Vertex; 3] = [
         Vertex {
-            position: Vec3::new((WIDTH / 2) as f32 + 100.0, (HEIGHT / 4) as f32, 1.0),
-            color: Vec4::new(1.0, 0.0, 0.0, 0.0),
-        },
-        Vertex {
-            position: Vec3::new((WIDTH / 4) as f32 + 100.0, (HEIGHT - (HEIGHT / 4)) as f32, 1.0),
-            color: Vec4::new(0.0, 1.0, 0.0, 0.0),
-        },
-        Vertex {
-            position: Vec3::new(
-                (WIDTH - (WIDTH / 4)) as f32 + 100.0,
-                (HEIGHT - (HEIGHT / 4)) as f32,
-                1.0,
-            ),
+            position: Vec3::new(300.0, 0.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
         },
     ];
 
-    let triangle1: Triangle = Triangle::new(vertices1);
-    let triangle2: Triangle = Triangle::new(vertices2);
+    let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];
+
+    let triangle1: Quad = Quad::new(vertices1, indices);
 
     let mut shapes: Vec<Box<dyn Shape>> = vec![];
     shapes.push(Box::new(triangle1));
-    shapes.push(Box::new(triangle2));
 
     let mut win_opts = WindowOptions::default();
     win_opts.resize = true;

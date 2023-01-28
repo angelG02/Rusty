@@ -22,10 +22,7 @@ pub fn clear_screen(buffer: &mut Vec<u32>, color: Vec4) {
 }
 
 pub fn edge_fn(p: Vec2, v0: Vec3, v1: Vec3) -> f32 {
-    let v0_p = p - v0.xy();
-    let v0_v1 = v1 - v0;
-
-    v0_p.x * v0_v1.y - v0_p.y * v0_v1.x
+    (p.x - v0.x) * (v1.y - v0.y) - (p.y - v0.y) * (v1.x - v0.x)
 }
 
 pub fn barycentric_coordinates(
