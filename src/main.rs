@@ -14,51 +14,38 @@ fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
     let mut depth_buffer: Vec<f32> = vec![f32::INFINITY; WIDTH * HEIGHT];
 
-    // let vertices1: [Vertex; 4] = [
-    //     Vertex {
-    //         position: Vec3::new(0.0, 0.0, 1.0),
-    //         color: Vec4::new(0.0, 0.0, 1.0, 0.0),
-    //     },
-    //     Vertex {
-    //         position: Vec3::new(0.0, 300.0, 1.0),
-    //         color: Vec4::new(0.0, 0.0, 1.0, 0.0),
-    //     },
-    //     Vertex {
-    //         position: Vec3::new(300.0, 300.0, 1.0),
-    //         color: Vec4::new(0.0, 0.0, 1.0, 0.0),
-    //     },
-    //     Vertex {
-    //         position: Vec3::new(300.0, 0.0, 1.0),
-    //         color: Vec4::new(0.0, 0.0, 1.0, 0.0),
-    //     },
-    // ];
-
-    // let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];
-
-    let vertices1: [Vertex; 3] = [
+    let vertices1: [Vertex; 4] = [
         Vertex {
             position: Vec3::new(0.0, 0.0, 1.0),
-            color: Vec4::new(1.0, 0.0, 1.0, 0.0),
+            color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec3::new(0.0, 0.0, 1.0),
         },
         Vertex {
             position: Vec3::new(0.0, 300.0, 1.0),
-            color: Vec4::new(1.0, 0.0, 1.0, 0.0),
-            uv: Vec3::new(0.5, 1.0, 1.0),
+            color: Vec4::new(0.0, 0.0, 1.0, 0.0),
+            uv: Vec3::new(0.0, 1.0, 1.0),
         },
         Vertex {
             position: Vec3::new(300.0, 300.0, 1.0),
-            color: Vec4::new(1.0, 0.0, 1.0, 0.0),
+            color: Vec4::new(0.0, 0.0, 1.0, 0.0),
+            uv: Vec3::new(1.0, 1.0, 1.0),
+        },
+        Vertex {
+            position: Vec3::new(300.0, 0.0, 1.0),
+            color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec3::new(1.0, 0.0, 1.0),
         },
     ];
 
-    let texture_path = String::from("resources/textures/bojan.jpg");
+    let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];
 
-    let triangle1: Triangle = Triangle::new_with_texture(vertices1, &texture_path);
+    let texture_path = String::from("resources/textures/logo1.png");
+    let texture: Texture = Texture::load(std::path::Path::new(&texture_path));
+
+    let quad: Quad = Quad::new_with_texture(vertices1, indices, texture);
 
     let mut shapes: Vec<Box<dyn Shape>> = vec![];
-    shapes.push(Box::new(triangle1));
+    shapes.push(Box::new(quad));
 
     let mut win_opts = WindowOptions::default();
     win_opts.resize = true;

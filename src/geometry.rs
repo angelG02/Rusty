@@ -1,6 +1,6 @@
-use glam::{Vec2, Vec3, Vec3Swizzles, Vec4};
-use crate::utils::*;
 use crate::texture::*;
+use crate::utils::*;
+use glam::{Vec2, Vec3, Vec3Swizzles, Vec4};
 
 pub struct AABB {
     pub min: Vec2,
@@ -88,11 +88,11 @@ impl Triangle {
         }
     }
 
-    pub fn new_with_texture(vertices: [Vertex; 3], texture_path: &String) -> Self {
+    pub fn new_with_texture(vertices: [Vertex; 3], texture: Texture) -> Self {
         Triangle {
             vertices,
             bounding_box: AABB::new(&vertices),
-            texture: Some(Texture::load(std::path::Path::new(texture_path))),
+            texture: Some(texture),
         }
     }
 }
@@ -123,7 +123,7 @@ impl Shape for Triangle {
 
                 if depth <= depth_buffer[i] {
                     depth_buffer[i] = depth;
-                    
+
                     if self.texture.is_none() {
                         let color = bary.x * v0.color + bary.y * v1.color + bary.z * v2.color;
                         buffer[i] = to_argb8(
@@ -134,7 +134,11 @@ impl Shape for Triangle {
                         );
                     } else {
                         let tex_coords = bary.x * v0.uv + bary.y * v1.uv + bary.z * v2.uv;
-                        let color = self.texture.as_ref().unwrap().argb_at_uv(tex_coords.x, tex_coords.y);
+                        let color = self
+                            .texture
+                            .as_ref()
+                            .unwrap()
+                            .argb_at_uv(tex_coords.x, tex_coords.y);
 
                         buffer[i] = color;
                     }
@@ -156,6 +160,7 @@ pub struct Quad {
     vertices: [Vertex; 4],
     indices: [u32; 6],
     bounding_box: AABB,
+    texture: Option<Texture>,
 }
 
 impl Quad {
@@ -164,6 +169,20 @@ impl Quad {
             vertices,
             indices,
             bounding_box: AABB::new_box(&vertices),
+            texture: None,
+        }
+    }
+
+    pub fn new_with_texture(
+        vertices: [Vertex; 4],
+        indices: [u32; 6],
+        texture: Texture,
+    ) -> Self {
+        Quad {
+            vertices,
+            indices,
+            bounding_box: AABB::new_box(&vertices),
+            texture: Some(texture),
         }
     }
 }
@@ -181,11 +200,25 @@ impl Shape for Quad {
             self.vertices[self.indices[5] as usize],
         ];
 
-        let triangle1 = Triangle::new(triangle_vertices1);
-        let triangle2 = Triangle::new(triangle_vertices2);
+        if self.texture.is_none() {
+            let triangle1 = Triangle::new(triangle_vertices1);
+            let triangle2 = Triangle::new(triangle_vertices2);
 
-        triangle1.draw(buffer, depth_buffer);
-        triangle2.draw(buffer, depth_buffer);
+            triangle1.draw(buffer, depth_buffer);
+            triangle2.draw(buffer, depth_buffer);
+        } else {
+            let triangle1 = Triangle::new_with_texture(
+                triangle_vertices1,
+                self.texture.as_ref().unwrap().clone(),
+            );
+            let triangle2 = Triangle::new_with_texture(
+                triangle_vertices2,
+                self.texture.as_ref().unwrap().clone(),
+            );
+
+            triangle1.draw(buffer, depth_buffer);
+            triangle2.draw(buffer, depth_buffer);
+        }
     }
 
     fn get_area(&self) -> f32 {

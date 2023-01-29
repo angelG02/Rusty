@@ -2,6 +2,7 @@ use crate::utils::*;
 use image::{self, GenericImageView};
 use std::path::Path;
 
+#[derive(Debug, Clone)]
 pub struct Texture {
     //pub name: String,
     pub width: usize,
