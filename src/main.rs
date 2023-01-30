@@ -2,17 +2,7 @@ use glam::{Vec2, Vec3, Vec4};
 use minifb::{Key, Window, WindowOptions};
 use std::sync::Arc;
 
-pub mod utils;
-pub use utils::*;
-
-pub mod geometry;
-pub use geometry::*;
-
-pub mod texture;
-pub use texture::Texture;
-
-pub mod mesh;
-pub use mesh::*;
+use rusterizer::*;
 
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
