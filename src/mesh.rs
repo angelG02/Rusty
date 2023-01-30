@@ -62,6 +62,12 @@ impl Object for Mesh {
     }
 
     fn get_area(&self) -> f32 {
-        f32::INFINITY
+        let mut area: f32 = 0.0;
+        for triangle_indices in self.triangles.clone() {
+            let triangle_vertices: [Vertex; 3] = self.get_vertices_from_triangle(triangle_indices);
+            let triangle = Triangle::new(triangle_vertices);
+            area += triangle.get_area();
+        }
+        area
     }
 }
