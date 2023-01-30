@@ -1,6 +1,7 @@
 use crate::texture::*;
 use crate::utils::*;
 use glam::{Vec2, Vec3, Vec3Swizzles, Vec4};
+use std::sync::Arc;
 
 use std::ops::{Add, Mul, Sub};
 
@@ -117,7 +118,7 @@ impl Mul for Vertex {
 pub struct Triangle {
     pub vertices: [Vertex; 3],
     pub bounding_box: AABB,
-    pub texture: Option<Texture>,
+    pub texture: Option<Arc<Texture>>,
 }
 
 impl Triangle {
@@ -129,7 +130,7 @@ impl Triangle {
         }
     }
 
-    pub fn new_with_texture(vertices: [Vertex; 3], texture: Texture) -> Self {
+    pub fn new_with_texture(vertices: [Vertex; 3], texture: Arc<Texture>) -> Self {
         Triangle {
             vertices,
             bounding_box: AABB::new(&vertices),
@@ -201,7 +202,7 @@ pub struct Quad {
     vertices: [Vertex; 4],
     indices: [u32; 6],
     bounding_box: AABB,
-    texture: Option<Texture>,
+    texture: Option<Arc<Texture>>,
 }
 
 impl Quad {
@@ -214,7 +215,7 @@ impl Quad {
         }
     }
 
-    pub fn new_with_texture(vertices: [Vertex; 4], indices: [u32; 6], texture: Texture) -> Self {
+    pub fn new_with_texture(vertices: [Vertex; 4], indices: [u32; 6], texture: Arc<Texture>) -> Self {
         Quad {
             vertices,
             indices,

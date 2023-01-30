@@ -1,5 +1,6 @@
 use glam::{Vec2, Vec3, Vec4};
 use minifb::{Key, Window, WindowOptions};
+use std::sync::Arc;
 
 pub mod utils;
 pub use utils::*;
@@ -10,42 +11,51 @@ pub use geometry::*;
 pub mod texture;
 pub use texture::Texture;
 
+pub mod mesh;
+pub use mesh::*;
+
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
     let mut depth_buffer: Vec<f32> = vec![f32::INFINITY; WIDTH * HEIGHT];
 
     let vertices1: [Vertex; 4] = [
         Vertex {
-            position: Vec3::new(0.0, 0.0, 1.0),
+            position: Vec3::new(100.0, 50.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(0.0, 0.0),
         },
         Vertex {
-            position: Vec3::new(0.0, 300.0, 1.0),
+            position: Vec3::new(100.0, 350.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(0.0, 1.0),
         },
         Vertex {
-            position: Vec3::new(300.0, 300.0, 1.0),
+            position: Vec3::new(400.0, 350.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(1.0, 1.0),
         },
         Vertex {
-            position: Vec3::new(300.0, 0.0, 1.0),
+            position: Vec3::new(400.0, 50.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(1.0, 0.0),
         },
     ];
 
-    let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];
+    let triangles = vec![glam::uvec3(0, 1, 2), glam::uvec3(0, 2, 3)];
+    let vertices = vec![vertices1[0], vertices1[1], vertices1[2], vertices1[3]];
+
+    //let indices: [u32; 6] = [0, 1, 2, 2, 3, 0];
 
     let texture_path = String::from("resources/textures/logo1.png");
-    let texture: Texture = Texture::load(std::path::Path::new(&texture_path));
+    let texture: Arc<Texture> = Arc::new(Texture::load(std::path::Path::new(&texture_path)));
 
-    let quad: Quad = Quad::new_with_texture(vertices1, indices, texture);
+    let mut mesh = Mesh::new_with_texture(texture.clone());
+    mesh.add_section_from_vertices(&triangles, &vertices);
+
+    //let quad: Quad = Quad::new_with_texture(vertices1, indices, texture);
 
     let mut shapes: Vec<Box<dyn Object>> = vec![];
-    shapes.push(Box::new(quad));
+    shapes.push(Box::new(mesh));
 
     let mut win_opts = WindowOptions::default();
     win_opts.resize = true;
