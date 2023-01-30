@@ -1,5 +1,5 @@
-use glam::{Vec2, Vec3, Vec4};
 use minifb::{Key, Window, WindowOptions};
+use glam::{Vec2, Vec3, Vec4};
 use std::sync::Arc;
 
 use rusterizer::*;
@@ -10,14 +10,12 @@ fn main() {
 
     let aspect_ratio = WIDTH as f32 / HEIGHT as f32;
 
-    let camera = Camera {
+    let mut camera = Camera {
         aspect_ratio,
         transform: Transform::from_translation(glam::vec3(0.0, 0.0, 5.0)),
         frustum_far: 100.0,
         ..Default::default()
     };
-
-    let mvp = camera.projection() * camera.view() * Transform::IDENTITY.local();
 
     let vertices1: [Vertex; 4] = [
         Vertex {
@@ -68,6 +66,11 @@ fn main() {
     let mut current_time = std::time::Instant::now();
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
+        // Clear screen
+        let clear_color = Vec4::new(204.0, 255.0, 255.0, 0.0);
+        clear_screen(&mut buffer, clear_color);
+        clear_buffer(&mut depth_buffer, f32::INFINITY);
+
         // Calculate frame time (delta time)
         let new_time = std::time::Instant::now();
         let frame_time = (new_time - current_time).as_secs_f64();
@@ -75,13 +78,21 @@ fn main() {
 
         println!("Frame time: {frame_time}");
 
-        // Clear screen
-        let clear_color = Vec4::new(204.0, 255.0, 255.0, 0.0);
-        clear_screen(&mut buffer, clear_color);
+        // Update
+        camera.update(&window, frame_time as f32);
+        let mvp = camera.projection() * camera.view() * Transform::IDENTITY.local();        
 
         // Draw shapes
         for shape in shapes.iter() {
-            shape.draw(&mut buffer, &mut depth_buffer, &mvp, Vec2 { x: WIDTH as f32, y: HEIGHT as f32});
+            shape.draw(
+                &mut buffer,
+                &mut depth_buffer,
+                &mvp,
+                Vec2 {
+                    x: WIDTH as f32,
+                    y: HEIGHT as f32,
+                },
+            );
         }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way

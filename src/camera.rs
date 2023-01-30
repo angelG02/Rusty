@@ -1,5 +1,6 @@
 use crate::transform::Transform;
 
+use minifb::{Key, Window};
 use glam::Mat4;
 
 pub struct Camera {
@@ -19,7 +20,7 @@ impl Default for Camera {
             fov: std::f32::consts::PI / 4.0,
             aspect_ratio: 1.0,
             transform: Transform::IDENTITY,
-            speed: 1.0,
+            speed: 20.0,
         }
     }
 }
@@ -40,5 +41,23 @@ impl Camera {
             self.transform.translation + self.transform.forward(),
             self.transform.up(),
         )
+    }
+
+    pub fn update(&mut self, window: &Window, dt: f32) {
+        if window.is_key_down(Key::W) {
+            self.transform.translation.z -= self.speed * dt;
+        }
+
+        if window.is_key_down(Key::S) {
+            self.transform.translation.z += self.speed * dt;
+        }
+
+        if window.is_key_down(Key::A) {
+            self.transform.translation.x -= self.speed * dt;
+        }
+
+        if window.is_key_down(Key::D) {
+            self.transform.translation.x += self.speed * dt;
+        }
     }
 }

@@ -25,6 +25,14 @@ pub fn clear_screen(buffer: &mut Vec<u32>, color: Vec4) {
     }
 }
 
+pub fn clear_buffer<T>(buffer: &mut Vec<T>, value: T)
+where
+    T: Copy,
+{
+    // will "consume" the iterator and return the n of iterations
+    buffer.iter_mut().map(|x| *x = value).count();
+}
+
 pub fn edge_fn(p: Vec2, v0: Vec2, v1: Vec2) -> f32 {
     (p.x - v0.x) * (v1.y - v0.y) - (p.y - v0.y) * (v1.x - v0.x)
 }

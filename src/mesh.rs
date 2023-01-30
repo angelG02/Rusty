@@ -68,7 +68,13 @@ impl Default for Mesh {
 }
 
 impl Object for Mesh {
-    fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>, mvp: &Mat4, viewport_size: Vec2) {
+    fn draw(
+        &self,
+        buffer: &mut Vec<u32>,
+        depth_buffer: &mut Vec<f32>,
+        mvp: &Mat4,
+        viewport_size: Vec2,
+    ) {
         for triangle_indices in self.triangles.clone() {
             let triangle_vertices: [Vertex; 3] = self.get_vertices_from_triangle(triangle_indices);
             if self.texture.is_some() {
