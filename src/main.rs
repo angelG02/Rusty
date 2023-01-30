@@ -8,6 +8,15 @@ fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
     let mut depth_buffer: Vec<f32> = vec![f32::INFINITY; WIDTH * HEIGHT];
 
+    let aspect_ratio = WIDTH as f32 / HEIGHT as f32;
+
+    let _camera = Camera {
+        aspect_ratio,
+        transform: Transform::from_translation(glam::vec3(0.0, 0.0, 500.0)),
+        frustum_far: 1000.0,
+        ..Default::default()
+    };
+
     let vertices1: [Vertex; 4] = [
         Vertex {
             position: Vec3::new(100.0, 50.0, 1.0),
