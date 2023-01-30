@@ -2,6 +2,8 @@ use crate::texture::*;
 use crate::utils::*;
 use glam::{Vec2, Vec3, Vec3Swizzles, Vec4};
 
+use std::ops::{Add, Mul, Sub};
+
 pub struct AABB {
     pub min: Vec2,
     pub max: Vec2,
@@ -61,7 +63,7 @@ impl AABB {
     }
 }
 
-pub trait Shape {
+pub trait Object {
     fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>);
     fn get_area(&self) -> f32;
 }
@@ -70,7 +72,46 @@ pub trait Shape {
 pub struct Vertex {
     pub position: Vec3,
     pub color: Vec4,
-    pub uv: Vec3,
+    pub uv: Vec2,
+}
+
+impl Vertex {
+    pub fn new(position: Vec3, color: Vec4, uv: Vec2) -> Self {
+        Self { position, color, uv }
+    }
+}
+
+impl Add for Vertex {
+    type Output = Self;
+
+    fn add(self, rhs: Self) -> Self::Output {
+        let position = self.position + rhs.position;
+        let color = self.color + rhs.color;
+        let uv = self.uv + rhs.uv;
+        Self::new(position, color, uv)
+    }
+}
+
+impl Sub for Vertex {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        let position = self.position - rhs.position;
+        let color = self.color - rhs.color;
+        let uv = self.uv - rhs.uv;
+        Self::new(position, color, uv)
+    }
+}
+
+impl Mul for Vertex {
+    type Output = Self;
+
+    fn mul(self, rhs: Self) -> Self::Output {
+        let position = self.position * rhs.position;
+        let color = self.color * rhs.color;
+        let uv = self.uv * rhs.uv;
+        Self::new(position, color, uv)
+    }
 }
 
 pub struct Triangle {
@@ -97,7 +138,7 @@ impl Triangle {
     }
 }
 
-impl Shape for Triangle {
+impl Object for Triangle {
     fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>) {
         let v0 = &self.vertices[0];
         let v1 = &self.vertices[1];
@@ -116,7 +157,7 @@ impl Shape for Triangle {
             }
 
             if let Some(bary) =
-                barycentric_coordinates(coords, v0.position, v1.position, v2.position, area)
+                barycentric_coordinates(coords, v0.position.xy(), v1.position.xy(), v2.position.xy(), area)
             {
                 let depth =
                     bary.x * v0.position.z + bary.y * v1.position.z + bary.z * v2.position.z;
@@ -150,8 +191,8 @@ impl Shape for Triangle {
     fn get_area(&self) -> f32 {
         edge_fn(
             self.vertices[0].position.xy(),
-            self.vertices[1].position,
-            self.vertices[2].position,
+            self.vertices[1].position.xy(),
+            self.vertices[2].position.xy(),
         )
     }
 }
@@ -173,11 +214,7 @@ impl Quad {
         }
     }
 
-    pub fn new_with_texture(
-        vertices: [Vertex; 4],
-        indices: [u32; 6],
-        texture: Texture,
-    ) -> Self {
+    pub fn new_with_texture(vertices: [Vertex; 4], indices: [u32; 6], texture: Texture) -> Self {
         Quad {
             vertices,
             indices,
@@ -187,7 +224,7 @@ impl Quad {
     }
 }
 
-impl Shape for Quad {
+impl Object for Quad {
     fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>) {
         let triangle_vertices1: [Vertex; 3] = [
             self.vertices[self.indices[0] as usize],
@@ -233,7 +270,7 @@ pub struct Circle {
     pub color: Vec4,
 }
 
-impl Shape for Circle {
+impl Object for Circle {
     fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>) {
         for i in 0..buffer.len() {
             let x = i as f32 % WIDTH as f32;

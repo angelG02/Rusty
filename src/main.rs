@@ -1,4 +1,4 @@
-use glam::{Vec3, Vec4};
+use glam::{Vec2, Vec3, Vec4};
 use minifb::{Key, Window, WindowOptions};
 
 pub mod utils;
@@ -18,22 +18,22 @@ fn main() {
         Vertex {
             position: Vec3::new(0.0, 0.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
-            uv: Vec3::new(0.0, 0.0, 1.0),
+            uv: Vec2::new(0.0, 0.0),
         },
         Vertex {
             position: Vec3::new(0.0, 300.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
-            uv: Vec3::new(0.0, 1.0, 1.0),
+            uv: Vec2::new(0.0, 1.0),
         },
         Vertex {
             position: Vec3::new(300.0, 300.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
-            uv: Vec3::new(1.0, 1.0, 1.0),
+            uv: Vec2::new(1.0, 1.0),
         },
         Vertex {
             position: Vec3::new(300.0, 0.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
-            uv: Vec3::new(1.0, 0.0, 1.0),
+            uv: Vec2::new(1.0, 0.0),
         },
     ];
 
@@ -44,7 +44,7 @@ fn main() {
 
     let quad: Quad = Quad::new_with_texture(vertices1, indices, texture);
 
-    let mut shapes: Vec<Box<dyn Shape>> = vec![];
+    let mut shapes: Vec<Box<dyn Object>> = vec![];
     shapes.push(Box::new(quad));
 
     let mut win_opts = WindowOptions::default();
