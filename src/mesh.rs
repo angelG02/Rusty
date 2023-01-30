@@ -7,16 +7,24 @@ use std::sync::Arc;
 pub struct Mesh {
     triangles: Vec<UVec3>,
     vertices: Vec<Vertex>,
-    texture: Option<Arc<Texture>>
+    texture: Option<Arc<Texture>>,
 }
 
 impl Mesh {
     pub fn new() -> Self {
-        Self { triangles: Vec::new(), vertices: Vec::new(), texture: None }
+        Self {
+            triangles: Vec::new(),
+            vertices: Vec::new(),
+            texture: None,
+        }
     }
 
     pub fn new_with_texture(texture: Arc<Texture>) -> Self {
-        Self { triangles: Vec::new(), vertices: Vec::new(), texture: Some(texture) }
+        Self {
+            triangles: Vec::new(),
+            vertices: Vec::new(),
+            texture: Some(texture),
+        }
     }
 
     pub fn triangles(&self) -> &Vec<UVec3> {
@@ -64,12 +72,15 @@ impl Object for Mesh {
         for triangle_indices in self.triangles.clone() {
             let triangle_vertices: [Vertex; 3] = self.get_vertices_from_triangle(triangle_indices);
             if self.texture.is_some() {
-                let triangle = Triangle::new_with_texture(triangle_vertices, self.texture.as_ref().unwrap().clone());
+                let triangle = Triangle::new_with_texture(
+                    triangle_vertices,
+                    self.texture.as_ref().unwrap().clone(),
+                );
                 triangle.draw(buffer, depth_buffer)
             } else {
                 let triangle = Triangle::new(triangle_vertices);
                 triangle.draw(buffer, depth_buffer)
-            }            
+            }
         }
     }
 

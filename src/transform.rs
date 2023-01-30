@@ -14,7 +14,7 @@ impl Transform {
         scale: Vec3::ONE,
     };
 
-    pub fn new(translation: Vec3, rotation: Quat, scale: vec3) -> Self {
+    pub fn new(translation: Vec3, rotation: Quat, scale: Vec3) -> Self {
         Self {
             translation,
             rotation: rotation.normalize(),
@@ -23,7 +23,9 @@ impl Transform {
     }
 
     pub fn local(&self) -> Mat4 {
-        Mat4::from_translation(self.translation) * Mat4::from_quat(self.rotation) * Mat4::from_scale(self.scale)
+        Mat4::from_translation(self.translation)
+            * Mat4::from_quat(self.rotation)
+            * Mat4::from_scale(self.scale)
     }
 
     pub fn from_translation(translation: Vec3) -> Self {
@@ -67,7 +69,7 @@ impl Transform {
 //is preferred since it gives you Into<..> for free where the reverse isn’t true.
 impl From<Transform> for Mat4 {
     fn from(transform: Transform) -> Mat4 {
-        transform.local();
+        transform.local()
     }
 }
 

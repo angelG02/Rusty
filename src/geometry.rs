@@ -78,7 +78,11 @@ pub struct Vertex {
 
 impl Vertex {
     pub fn new(position: Vec3, color: Vec4, uv: Vec2) -> Self {
-        Self { position, color, uv }
+        Self {
+            position,
+            color,
+            uv,
+        }
     }
 }
 
@@ -157,9 +161,13 @@ impl Object for Triangle {
                 continue;
             }
 
-            if let Some(bary) =
-                barycentric_coordinates(coords, v0.position.xy(), v1.position.xy(), v2.position.xy(), area)
-            {
+            if let Some(bary) = barycentric_coordinates(
+                coords,
+                v0.position.xy(),
+                v1.position.xy(),
+                v2.position.xy(),
+                area,
+            ) {
                 let depth =
                     bary.x * v0.position.z + bary.y * v1.position.z + bary.z * v2.position.z;
 
@@ -215,7 +223,11 @@ impl Quad {
         }
     }
 
-    pub fn new_with_texture(vertices: [Vertex; 4], indices: [u32; 6], texture: Arc<Texture>) -> Self {
+    pub fn new_with_texture(
+        vertices: [Vertex; 4],
+        indices: [u32; 6],
+        texture: Arc<Texture>,
+    ) -> Self {
         Quad {
             vertices,
             indices,
