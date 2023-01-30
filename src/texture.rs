@@ -29,7 +29,11 @@ impl Texture {
             index += 1;
         }
 
-        Texture { width: decoded_image.width() as usize, height: decoded_image.height() as usize, data}
+        Texture {
+            width: decoded_image.width() as usize,
+            height: decoded_image.height() as usize,
+            data,
+        }
     }
 
     pub fn argb_at_uv(&self, u: f32, v: f32) -> u32 {
