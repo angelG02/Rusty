@@ -3,7 +3,7 @@ use crate::utils::*;
 use glam::{Mat4, Vec2, Vec3, Vec3Swizzles, Vec4};
 use std::sync::Arc;
 
-use std::ops::{Add, Mul, Sub};
+use std::ops::{Add, Mul, Sub, MulAssign};
 
 pub struct AABB {
     pub min: Vec2,
@@ -125,6 +125,25 @@ impl Mul for Vertex {
     }
 }
 
+impl Mul<f32> for Vertex {
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self {
+        let position = self.position * rhs;
+        let color = self.color * rhs;
+        let uv = self.uv * rhs;
+        Self::new(position, color, uv)
+    }
+}
+
+impl MulAssign<f32> for Vertex {
+    fn mul_assign(&mut self, rhs: f32) {
+        self.position *= rhs;
+        self.color *= rhs;
+        self.uv *= rhs;
+    }
+}
+
 pub struct Triangle {
     pub vertices: [Vertex; 3],
     pub texture: Option<Arc<Texture>>,
@@ -154,20 +173,24 @@ impl Object for Triangle {
         mvp: &Mat4,
         viewport_size: Vec2,
     ) {
-        let v0 = &self.vertices[0];
-        let v1 = &self.vertices[1];
-        let v2 = &self.vertices[2];
+        let clip0 = *mvp * Vec4::from((self.vertices[0].position, 1.0));
+        let clip1 = *mvp * Vec4::from((self.vertices[1].position, 1.0));
+        let clip2 = *mvp * Vec4::from((self.vertices[2].position, 1.0));
 
-        let clip0 = *mvp * Vec4::from((v0.position, 1.0));
-        let clip1 = *mvp * Vec4::from((v1.position, 1.0));
-        let clip2 = *mvp * Vec4::from((v2.position, 1.0));
+        let rec0 = 1.0 / clip0.w;
+        let rec1 = 1.0 / clip1.w;
+        let rec2 = 1.0 / clip2.w;
 
         // This would be the output of the vertex shader (clip space)
         // then we perform perspective division to transform in ndc
         // now x,y,z componend of ndc are between -1 and 1
-        let ndc0 = clip0 / clip0.w;
-        let ndc1 = clip1 / clip1.w;
-        let ndc2 = clip2 / clip2.w;
+        let ndc0 = clip0 * rec0;
+        let ndc1 = clip1 * rec1;
+        let ndc2 = clip2 * rec2; 
+
+        let v0 = self.vertices[0] * rec0;
+        let v1 = self.vertices[1] * rec1;
+        let v2 = self.vertices[2] * rec2;
 
         // screeen coordinates remapped to window
         let sc0 = glam::vec2(
@@ -198,30 +221,37 @@ impl Object for Triangle {
             }
 
             if let Some(bary) = barycentric_coordinates(coords, sc0, sc1, sc2, area) {
-                let depth =
-                    bary.x * v0.position.z + bary.y * v1.position.z + bary.z * v2.position.z;
+                let correction = bary.x * rec0 + bary.y * rec1 + bary.z * rec2;
+                let depth = correction;
+                let correction = 1.0 / correction;
 
-                if depth <= depth_buffer[i] {
+                // let depth =
+                //     bary.x * ndc0.z + bary.y * ndc1.z + bary.z * ndc2.z;
+
+                if depth < depth_buffer[i] {
                     depth_buffer[i] = depth;
 
-                    if self.texture.is_none() {
-                        let color = bary.x * v0.color + bary.y * v1.color + bary.z * v2.color;
-                        buffer[i] = to_argb8(
-                            color.w as u8,
-                            (color.x * 255.0) as u8,
-                            (color.y * 255.0) as u8,
-                            (color.z * 255.0) as u8,
-                        );
-                    } else {
+                    let color = bary.x * v0.color + bary.y * v1.color + bary.z * v2.color;
+                    let color = color * correction;
+
+                    let mut color = to_argb8(
+                        255,
+                        (color.x * 255.0) as u8,
+                        (color.y * 255.0) as u8,
+                        (color.z * 255.0) as u8,
+                    );
+
+                    if self.texture.is_some() {
                         let tex_coords = bary.x * v0.uv + bary.y * v1.uv + bary.z * v2.uv;
-                        let color = self
+                        let tex_coords = tex_coords * correction;
+
+                        color = self
                             .texture
                             .as_ref()
                             .unwrap()
                             .argb_at_uv(tex_coords.x, tex_coords.y);
-
-                        buffer[i] = color;
                     }
+                    buffer[i] = color;
                 }
             }
         }
