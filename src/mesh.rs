@@ -1,7 +1,7 @@
 use crate::geometry::*;
 use crate::texture::*;
 
-use glam::UVec3;
+use glam::{Mat4, UVec3, Vec2};
 use std::sync::Arc;
 
 pub struct Mesh {
@@ -68,7 +68,7 @@ impl Default for Mesh {
 }
 
 impl Object for Mesh {
-    fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>) {
+    fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>, mvp: &Mat4, viewport_size: Vec2) {
         for triangle_indices in self.triangles.clone() {
             let triangle_vertices: [Vertex; 3] = self.get_vertices_from_triangle(triangle_indices);
             if self.texture.is_some() {
@@ -76,10 +76,10 @@ impl Object for Mesh {
                     triangle_vertices,
                     self.texture.as_ref().unwrap().clone(),
                 );
-                triangle.draw(buffer, depth_buffer)
+                triangle.draw(buffer, depth_buffer, mvp, viewport_size);
             } else {
                 let triangle = Triangle::new(triangle_vertices);
-                triangle.draw(buffer, depth_buffer)
+                triangle.draw(buffer, depth_buffer, mvp, viewport_size);
             }
         }
     }

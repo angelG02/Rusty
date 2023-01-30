@@ -10,31 +10,33 @@ fn main() {
 
     let aspect_ratio = WIDTH as f32 / HEIGHT as f32;
 
-    let _camera = Camera {
+    let camera = Camera {
         aspect_ratio,
-        transform: Transform::from_translation(glam::vec3(0.0, 0.0, 500.0)),
-        frustum_far: 1000.0,
+        transform: Transform::from_translation(glam::vec3(0.0, 0.0, 5.0)),
+        frustum_far: 100.0,
         ..Default::default()
     };
 
+    let mvp = camera.projection() * camera.view() * Transform::IDENTITY.local();
+
     let vertices1: [Vertex; 4] = [
         Vertex {
-            position: Vec3::new(100.0, 50.0, 1.0),
+            position: Vec3::new(-1.0, 1.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(0.0, 0.0),
         },
         Vertex {
-            position: Vec3::new(100.0, 350.0, 1.0),
+            position: Vec3::new(-1.0, 0.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(0.0, 1.0),
         },
         Vertex {
-            position: Vec3::new(400.0, 350.0, 1.0),
+            position: Vec3::new(0.0, 0.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(1.0, 1.0),
         },
         Vertex {
-            position: Vec3::new(400.0, 50.0, 1.0),
+            position: Vec3::new(0.0, 1.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(1.0, 0.0),
         },
@@ -79,7 +81,7 @@ fn main() {
 
         // Draw shapes
         for shape in shapes.iter() {
-            shape.draw(&mut buffer, &mut depth_buffer);
+            shape.draw(&mut buffer, &mut depth_buffer, &mvp, Vec2 { x: WIDTH as f32, y: HEIGHT as f32});
         }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way

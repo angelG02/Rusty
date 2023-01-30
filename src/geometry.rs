@@ -1,6 +1,6 @@
 use crate::texture::*;
 use crate::utils::*;
-use glam::{Vec2, Vec3, Vec3Swizzles, Vec4};
+use glam::{Mat4, Vec2, Vec3, Vec3Swizzles, Vec4};
 use std::sync::Arc;
 
 use std::ops::{Add, Mul, Sub};
@@ -11,15 +11,15 @@ pub struct AABB {
 }
 
 impl AABB {
-    pub fn new(vertices: &[Vertex; 3]) -> Self {
+    pub fn new(vertices: &[Vec2; 3]) -> Self {
         let v0 = vertices[0];
         let v1 = vertices[1];
         let v2 = vertices[2];
 
-        let xmax = f32::max(f32::max(v0.position.x, v1.position.x), v2.position.x);
-        let ymax = f32::max(f32::max(v0.position.y, v1.position.y), v2.position.y);
-        let xmin = f32::min(f32::min(v0.position.x, v1.position.x), v2.position.x);
-        let ymin = f32::min(f32::min(v0.position.y, v1.position.y), v2.position.y);
+        let xmax = f32::max(f32::max(v0.x, v1.x), v2.x);
+        let ymax = f32::max(f32::max(v0.y, v1.y), v2.y);
+        let xmin = f32::min(f32::min(v0.x, v1.x), v2.x);
+        let ymin = f32::min(f32::min(v0.y, v1.y), v2.y);
 
         AABB {
             min: Vec2::new(xmin, ymin),
@@ -65,7 +65,13 @@ impl AABB {
 }
 
 pub trait Object {
-    fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>);
+    fn draw(
+        &self,
+        buffer: &mut Vec<u32>,
+        depth_buffer: &mut Vec<f32>,
+        mvp: &Mat4,
+        viewport_size: Vec2,
+    );
     fn get_area(&self) -> f32;
 }
 
@@ -121,7 +127,6 @@ impl Mul for Vertex {
 
 pub struct Triangle {
     pub vertices: [Vertex; 3],
-    pub bounding_box: AABB,
     pub texture: Option<Arc<Texture>>,
 }
 
@@ -129,7 +134,6 @@ impl Triangle {
     pub fn new(vertices: [Vertex; 3]) -> Self {
         Triangle {
             vertices,
-            bounding_box: AABB::new(&vertices),
             texture: None,
         }
     }
@@ -137,37 +141,63 @@ impl Triangle {
     pub fn new_with_texture(vertices: [Vertex; 3], texture: Arc<Texture>) -> Self {
         Triangle {
             vertices,
-            bounding_box: AABB::new(&vertices),
             texture: Some(texture),
         }
     }
 }
 
 impl Object for Triangle {
-    fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>) {
+    fn draw(
+        &self,
+        buffer: &mut Vec<u32>,
+        depth_buffer: &mut Vec<f32>,
+        mvp: &Mat4,
+        viewport_size: Vec2,
+    ) {
         let v0 = &self.vertices[0];
         let v1 = &self.vertices[1];
         let v2 = &self.vertices[2];
 
-        let area = self.get_area();
+        let clip0 = *mvp * Vec4::from((v0.position, 1.0));
+        let clip1 = *mvp * Vec4::from((v1.position, 1.0));
+        let clip2 = *mvp * Vec4::from((v2.position, 1.0));
+
+        // This would be the output of the vertex shader (clip space)
+        // then we perform perspective division to transform in ndc
+        // now x,y,z componend of ndc are between -1 and 1
+        let ndc0 = clip0 / clip0.w;
+        let ndc1 = clip1 / clip1.w;
+        let ndc2 = clip2 / clip2.w;
+
+        // screeen coordinates remapped to window
+        let sc0 = glam::vec2(
+            map_to_range(ndc0.x, -1.0, 1.0, 0.0, viewport_size.x),
+            map_to_range(-ndc0.y, -1.0, 1.0, 0.0, viewport_size.y),
+        );
+        let sc1 = glam::vec2(
+            map_to_range(ndc1.x, -1.0, 1.0, 0.0, viewport_size.x),
+            map_to_range(-ndc1.y, -1.0, 1.0, 0.0, viewport_size.y),
+        );
+        let sc2 = glam::vec2(
+            map_to_range(ndc2.x, -1.0, 1.0, 0.0, viewport_size.x),
+            map_to_range(-ndc2.y, -1.0, 1.0, 0.0, viewport_size.y),
+        );
+
+        let bounding_box: AABB = AABB::new(&[sc0, sc1, sc2]);
+
+        let area = edge_fn(sc0, sc1, sc2);
 
         for i in 0..buffer.len() {
-            let coords = index_to_coords(i, WIDTH);
+            let coords = index_to_coords(i, viewport_size.x as usize);
 
             // shadowing a variable
             let coords = glam::vec2(coords.0 as f32, coords.1 as f32);
 
-            if !(self.bounding_box.intersects(coords)) {
+            if !(bounding_box.intersects(coords)) {
                 continue;
             }
 
-            if let Some(bary) = barycentric_coordinates(
-                coords,
-                v0.position.xy(),
-                v1.position.xy(),
-                v2.position.xy(),
-                area,
-            ) {
+            if let Some(bary) = barycentric_coordinates(coords, sc0, sc1, sc2, area) {
                 let depth =
                     bary.x * v0.position.z + bary.y * v1.position.z + bary.z * v2.position.z;
 
@@ -209,7 +239,6 @@ impl Object for Triangle {
 pub struct Quad {
     vertices: [Vertex; 4],
     indices: [u32; 6],
-    bounding_box: AABB,
     texture: Option<Arc<Texture>>,
 }
 
@@ -218,7 +247,6 @@ impl Quad {
         Quad {
             vertices,
             indices,
-            bounding_box: AABB::new_box(&vertices),
             texture: None,
         }
     }
@@ -231,14 +259,19 @@ impl Quad {
         Quad {
             vertices,
             indices,
-            bounding_box: AABB::new_box(&vertices),
             texture: Some(texture),
         }
     }
 }
 
 impl Object for Quad {
-    fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>) {
+    fn draw(
+        &self,
+        buffer: &mut Vec<u32>,
+        depth_buffer: &mut Vec<f32>,
+        mvp: &Mat4,
+        viewport_size: Vec2,
+    ) {
         let triangle_vertices1: [Vertex; 3] = [
             self.vertices[self.indices[0] as usize],
             self.vertices[self.indices[1] as usize],
@@ -254,8 +287,8 @@ impl Object for Quad {
             let triangle1 = Triangle::new(triangle_vertices1);
             let triangle2 = Triangle::new(triangle_vertices2);
 
-            triangle1.draw(buffer, depth_buffer);
-            triangle2.draw(buffer, depth_buffer);
+            triangle1.draw(buffer, depth_buffer, mvp, viewport_size);
+            triangle2.draw(buffer, depth_buffer, mvp, viewport_size);
         } else {
             let triangle1 = Triangle::new_with_texture(
                 triangle_vertices1,
@@ -266,14 +299,13 @@ impl Object for Quad {
                 self.texture.as_ref().unwrap().clone(),
             );
 
-            triangle1.draw(buffer, depth_buffer);
-            triangle2.draw(buffer, depth_buffer);
+            triangle1.draw(buffer, depth_buffer, mvp, viewport_size);
+            triangle2.draw(buffer, depth_buffer, mvp, viewport_size);
         }
     }
 
     fn get_area(&self) -> f32 {
-        (self.bounding_box.max.x - self.bounding_box.min.x)
-            * (self.bounding_box.max.y - self.bounding_box.min.y)
+        f32::INFINITY
     }
 }
 
@@ -284,7 +316,13 @@ pub struct Circle {
 }
 
 impl Object for Circle {
-    fn draw(&self, buffer: &mut Vec<u32>, depth_buffer: &mut Vec<f32>) {
+    fn draw(
+        &self,
+        buffer: &mut Vec<u32>,
+        depth_buffer: &mut Vec<f32>,
+        _mvp: &Mat4,
+        _viewport_size: Vec2,
+    ) {
         for i in 0..buffer.len() {
             let x = i as f32 % WIDTH as f32;
             let y = i as f32 / WIDTH as f32;
