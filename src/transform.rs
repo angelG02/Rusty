@@ -61,7 +61,7 @@ impl Transform {
     }
 
     pub fn forward(&self) -> Vec3 {
-        self.rotation * -Vec3::Z
+        self.rotation * Vec3::Z
     }
 }
 
