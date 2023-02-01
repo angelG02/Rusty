@@ -52,7 +52,7 @@ impl Transform {
         }
     }
 
-    pub fn righ(&self) -> Vec3 {
+    pub fn right(&self) -> Vec3 {
         self.rotation * Vec3::X
     }
 

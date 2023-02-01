@@ -44,21 +44,23 @@ impl Camera {
     }
 
     pub fn update(&mut self, window: &Window, dt: f32) {
-        if window.is_key_down(Key::W) {
-            self.transform.translation.z -= self.speed * dt;
-        }
-
-        if window.is_key_down(Key::S) {
-            self.transform.translation.z += self.speed * dt;
-        }
-
+        let mut axis = glam::vec2(0.0, 0.0);
+        // we will make registering later
+    
         if window.is_key_down(Key::A) {
-            self.transform.translation.x -= self.speed * dt;
+            axis.x -= 1.0;
         }
-
         if window.is_key_down(Key::D) {
-            self.transform.translation.x += self.speed * dt;
+            axis.x += 1.0;
         }
+        if window.is_key_down(Key::W) {
+            axis.y -= 1.0;
+        }
+        if window.is_key_down(Key::S) {
+            axis.y += 1.0;
+        }
+        self.transform.translation += self.transform.right() * self.speed * axis.x * dt
+            + self.transform.forward() * self.speed * axis.y * dt;
 
         if window.is_key_down(Key::E) {
             self.transform.translation.y += self.speed * dt;
