@@ -46,7 +46,7 @@ impl Camera {
     pub fn update(&mut self, window: &Window, dt: f32) {
         let mut axis = glam::vec2(0.0, 0.0);
         // we will make registering later
-    
+
         if window.is_key_down(Key::A) {
             axis.x -= 1.0;
         }
