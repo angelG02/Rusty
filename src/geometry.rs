@@ -197,30 +197,23 @@ impl Triangle {
             VerticesOrder::CBA => Self::new([self.vertices[2], self.vertices[1], self.vertices[0]]),
         }
     }
-}
 
-impl Object for Triangle {
-    fn draw(
+    pub fn draw_clipped(
         &self,
         buffer: &mut Vec<u32>,
         depth_buffer: &mut Vec<f32>,
-        mvp: &Mat4,
         viewport_size: Vec2,
     ) {
-        let clip0 = *mvp * self.vertices[0].position;
-        let clip1 = *mvp * self.vertices[1].position;
-        let clip2 = *mvp * self.vertices[2].position;
-
-        let rec0 = 1.0 / clip0.w;
-        let rec1 = 1.0 / clip1.w;
-        let rec2 = 1.0 / clip2.w;
+        let rec0 = 1.0 / self.vertices[0].position.w;
+        let rec1 = 1.0 / self.vertices[1].position.w;
+        let rec2 = 1.0 / self.vertices[2].position.w;
 
         // This would be the output of the vertex shader (clip space)
         // then we perform perspective division to transform in ndc
         // now x,y,z componend of ndc are between -1 and 1
-        let ndc0 = clip0 * rec0;
-        let ndc1 = clip1 * rec1;
-        let ndc2 = clip2 * rec2; 
+        let ndc0 = self.vertices[0].position * rec0;
+        let ndc1 = self.vertices[1].position * rec1;
+        let ndc2 = self.vertices[2].position * rec2; 
 
         let v0 = self.vertices[0] * rec0;
         let v1 = self.vertices[1] * rec1;
@@ -287,6 +280,27 @@ impl Object for Triangle {
             }
         }
     }
+}
+
+impl Object for Triangle {
+    fn draw(
+        &self,
+        buffer: &mut Vec<u32>,
+        depth_buffer: &mut Vec<f32>,
+        mvp: &Mat4,
+        viewport_size: Vec2,
+    ) {
+        let clip_triangle = self.transform(mvp);
+
+        match cull_triangle_view_frustum(&clip_triangle) {
+            ClipResult::None => {
+                return;
+            }
+            ClipResult::One(tri) => {
+                tri.draw_clipped(buffer, depth_buffer, viewport_size);
+            }
+        }
+    }
 
     fn get_area(&self) -> f32 {
         edge_fn(
@@ -295,6 +309,52 @@ impl Object for Triangle {
             self.vertices[2].position.xy(),
         )
     }
+}
+
+pub enum ClipResult {
+    None,
+    One(Triangle),
+}
+
+//View Frustum Culling
+pub fn cull_triangle_view_frustum(triangle: &Triangle) -> ClipResult {
+    // cull tests against the 6 planes
+    if triangle.vertices[0].position.x > triangle.vertices[0].position.w
+        && triangle.vertices[1].position.x > triangle.vertices[1].position.w
+        && triangle.vertices[2].position.x > triangle.vertices[2].position.w
+    {
+        return ClipResult::None;
+    }
+    if triangle.vertices[0].position.x < -triangle.vertices[0].position.w
+        && triangle.vertices[1].position.x < -triangle.vertices[1].position.w
+        && triangle.vertices[2].position.x < -triangle.vertices[2].position.w
+    {
+        return ClipResult::None;
+    }
+    if triangle.vertices[0].position.y > triangle.vertices[0].position.w
+        && triangle.vertices[1].position.y > triangle.vertices[1].position.w
+        && triangle.vertices[2].position.y > triangle.vertices[2].position.w
+    {
+        return ClipResult::None;
+    }
+    if triangle.vertices[0].position.y < -triangle.vertices[0].position.w
+        && triangle.vertices[1].position.y < -triangle.vertices[1].position.w
+        && triangle.vertices[2].position.y < -triangle.vertices[2].position.w
+    {
+        return ClipResult::None;
+    }
+    if triangle.vertices[0].position.z > triangle.vertices[0].position.w
+        && triangle.vertices[1].position.z > triangle.vertices[1].position.w
+        && triangle.vertices[2].position.z > triangle.vertices[2].position.w
+    {
+        return ClipResult::None;
+    }
+    if triangle.vertices[0].position.z < 0.0 && triangle.vertices[1].position.z < 0.0 && triangle.vertices[2].position.z < 0.0
+    {
+        return ClipResult::None;
+    }
+
+    ClipResult::One(triangle.clone())
 }
 
 pub struct Quad {

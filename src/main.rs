@@ -13,6 +13,7 @@ fn main() {
     let mut camera = Camera {
         aspect_ratio,
         transform: Transform::from_translation(glam::vec3(0.0, 0.0, 5.0)),
+        frustum_near: 4.0,
         frustum_far: 100.0,
         ..Default::default()
     };
