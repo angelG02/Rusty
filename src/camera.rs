@@ -54,10 +54,10 @@ impl Camera {
             axis.x += 1.0;
         }
         if window.is_key_down(Key::W) {
-            axis.y -= 1.0;
+            axis.y += 1.0;
         }
         if window.is_key_down(Key::S) {
-            axis.y += 1.0;
+            axis.y -= 1.0;
         }
         self.transform.translation += self.transform.right() * self.speed * axis.x * dt
             + self.transform.forward() * self.speed * axis.y * dt;

@@ -1,6 +1,6 @@
 use crate::texture::*;
 use crate::utils::*;
-use glam::{Mat4, Vec2, Vec3, Vec3Swizzles, Vec4};
+use glam::{Mat4, Vec2, Vec3, Vec4Swizzles, Vec4};
 use std::sync::Arc;
 
 use std::ops::{Add, Mul, Sub, MulAssign};
@@ -77,13 +77,13 @@ pub trait Object {
 
 #[derive(Debug, Copy, Clone)]
 pub struct Vertex {
-    pub position: Vec3,
+    pub position: Vec4,
     pub color: Vec4,
     pub uv: Vec2,
 }
 
 impl Vertex {
-    pub fn new(position: Vec3, color: Vec4, uv: Vec2) -> Self {
+    pub fn new(position: Vec4, color: Vec4, uv: Vec2) -> Self {
         Self {
             position,
             color,
@@ -144,9 +144,19 @@ impl MulAssign<f32> for Vertex {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Triangle {
     pub vertices: [Vertex; 3],
     pub texture: Option<Arc<Texture>>,
+}
+
+pub enum VerticesOrder {
+    ABC,
+    ACB,
+    BAC,
+    BCA,
+    CAB,
+    CBA,
 }
 
 impl Triangle {
@@ -163,6 +173,30 @@ impl Triangle {
             texture: Some(texture),
         }
     }
+
+    pub fn transform(&self, matrix: &Mat4) -> Self {
+        let p0 = *matrix * self.vertices[0].position.xyz().extend(1.0);
+        let p1 = *matrix * self.vertices[1].position.xyz().extend(1.0);
+        let p2 = *matrix * self.vertices[2].position.xyz().extend(1.0);
+
+        let mut result = self.clone();
+        result.vertices[0].position = p0;
+        result.vertices[1].position = p1;
+        result.vertices[2].position = p2;
+
+        result
+    }
+
+    pub fn reorder(&self, order: VerticesOrder) -> Self {
+        match order {
+            VerticesOrder::ABC => self.clone(),
+            VerticesOrder::ACB => Self::new([self.vertices[0], self.vertices[2], self.vertices[1]]),
+            VerticesOrder::BAC => Self::new([self.vertices[1], self.vertices[0], self.vertices[2]]),
+            VerticesOrder::BCA => Self::new([self.vertices[1], self.vertices[2], self.vertices[0]]),
+            VerticesOrder::CAB => Self::new([self.vertices[2], self.vertices[0], self.vertices[1]]),
+            VerticesOrder::CBA => Self::new([self.vertices[2], self.vertices[1], self.vertices[0]]),
+        }
+    }
 }
 
 impl Object for Triangle {
@@ -173,9 +207,9 @@ impl Object for Triangle {
         mvp: &Mat4,
         viewport_size: Vec2,
     ) {
-        let clip0 = *mvp * Vec4::from((self.vertices[0].position, 1.0));
-        let clip1 = *mvp * Vec4::from((self.vertices[1].position, 1.0));
-        let clip2 = *mvp * Vec4::from((self.vertices[2].position, 1.0));
+        let clip0 = *mvp * self.vertices[0].position;
+        let clip1 = *mvp * self.vertices[1].position;
+        let clip2 = *mvp * self.vertices[2].position;
 
         let rec0 = 1.0 / clip0.w;
         let rec1 = 1.0 / clip1.w;
@@ -224,9 +258,6 @@ impl Object for Triangle {
                 let correction = bary.x * rec0 + bary.y * rec1 + bary.z * rec2;
                 let depth = correction;
                 let correction = 1.0 / correction;
-
-                // let depth =
-                //     bary.x * ndc0.z + bary.y * ndc1.z + bary.z * ndc2.z;
 
                 if depth < depth_buffer[i] {
                     depth_buffer[i] = depth;

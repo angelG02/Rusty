@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec3, Vec4};
+use glam::{Vec2, Vec4};
 use minifb::{Key, Window, WindowOptions};
 use std::sync::Arc;
 
@@ -19,22 +19,22 @@ fn main() {
 
     let vertices1: [Vertex; 4] = [
         Vertex {
-            position: Vec3::new(-1.0, -1.0, 1.0),
+            position: Vec4::new(-1.0, -1.0, 1.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(0.0, 0.0),
         },
         Vertex {
-            position: Vec3::new(-1.0, 1.0, 1.0),
+            position: Vec4::new(-1.0, 1.0, 1.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(0.0, 1.0),
         },
         Vertex {
-            position: Vec3::new(1.0, 1.0, 1.0),
+            position: Vec4::new(1.0, 1.0, 1.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(1.0, 1.0),
         },
         Vertex {
-            position: Vec3::new(1.0, -1.0, 1.0),
+            position: Vec4::new(1.0, -1.0, 1.0, 1.0),
             color: Vec4::new(0.0, 0.0, 1.0, 0.0),
             uv: Vec2::new(1.0, 0.0),
         },
@@ -82,10 +82,10 @@ fn main() {
         transform0, transform1, transform2, transform3, transform4, transform5,
     ];
 
-    let triangles = vec![glam::uvec3(0, 1, 2), glam::uvec3(0, 2, 3)];
+    let triangles = vec![glam::uvec3(2, 1, 0), glam::uvec3(3, 2, 0)];
     let vertices = vec![vertices1[0], vertices1[1], vertices1[2], vertices1[3]];
 
-    let texture_path = String::from("resources/textures/bojan.jpg");
+    let texture_path = String::from("resources/textures/phi.jpg");
     let texture: Arc<Texture> = Arc::new(Texture::load(std::path::Path::new(&texture_path)));
 
     let mut mesh0 = Mesh::from_vertices(&triangles, &vertices);
