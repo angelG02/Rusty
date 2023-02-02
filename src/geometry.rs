@@ -69,7 +69,7 @@ pub fn triangle_screen_bounding_box(positions: &[Vec2; 3], viewport_size: Vec2) 
         None
     } else {
         let left = bb.min.x.max(0.0);
-        let right = bb.max.x.min(viewport_size.x - 1.0);
+        let right = bb.max.x.min(viewport_size.x);
         let bottom = bb.min.y.max(0.0);
         let top = bb.max.y.min(viewport_size.y - 1.0);
 
@@ -206,35 +206,61 @@ impl Triangle {
     pub fn reorder(&self, order: VerticesOrder) -> Self {
         match order {
             VerticesOrder::ABC => self.clone(),
-            VerticesOrder::ACB => Self::new_with_texture(
-                [self.vertices[0], self.vertices[2], self.vertices[1]],
-                self.texture.clone().unwrap(),
-            ),
-            VerticesOrder::BAC => Self::new_with_texture(
-                [self.vertices[1], self.vertices[0], self.vertices[2]],
-                self.texture.clone().unwrap(),
-            ),
-            VerticesOrder::BCA => Self::new_with_texture(
-                [self.vertices[1], self.vertices[2], self.vertices[0]],
-                self.texture.clone().unwrap(),
-            ),
-            VerticesOrder::CAB => Self::new_with_texture(
-                [self.vertices[2], self.vertices[0], self.vertices[1]],
-                self.texture.clone().unwrap(),
-            ),
-            VerticesOrder::CBA => Self::new_with_texture(
-                [self.vertices[2], self.vertices[1], self.vertices[0]],
-                self.texture.clone().unwrap(),
-            ),
+            VerticesOrder::ACB => {
+                if self.texture.is_some() {
+                    Self::new_with_texture(
+                        [self.vertices[0], self.vertices[2], self.vertices[1]],
+                        self.texture.clone().unwrap(),
+                    )
+                } else {
+                    Self::new([self.vertices[0], self.vertices[2], self.vertices[1]])
+                }
+            }
+
+            VerticesOrder::BAC => {
+                if self.texture.is_some() {
+                    Self::new_with_texture(
+                        [self.vertices[1], self.vertices[0], self.vertices[2]],
+                        self.texture.clone().unwrap(),
+                    )
+                } else {
+                    Self::new([self.vertices[1], self.vertices[0], self.vertices[2]])
+                }
+            }
+            VerticesOrder::BCA => {
+                if self.texture.is_some() {
+                    Self::new_with_texture(
+                        [self.vertices[1], self.vertices[2], self.vertices[0]],
+                        self.texture.clone().unwrap(),
+                    )
+                } else {
+                    Self::new([self.vertices[1], self.vertices[2], self.vertices[0]])
+                }
+            }
+            VerticesOrder::CAB => {
+                if self.texture.is_some() {
+                    Self::new_with_texture(
+                        [self.vertices[2], self.vertices[0], self.vertices[1]],
+                        self.texture.clone().unwrap(),
+                    )
+                } else {
+                    Self::new([self.vertices[2], self.vertices[0], self.vertices[1]])
+                }
+            }
+            VerticesOrder::CBA => {
+                if self.texture.is_some() {
+                    Self::new_with_texture(
+                        [self.vertices[2], self.vertices[1], self.vertices[0]],
+                        self.texture.clone().unwrap(),
+                    )
+                } else {
+                    Self::new([self.vertices[2], self.vertices[1], self.vertices[0]])
+                }
+            }
         }
     }
 
-    pub fn draw_clipped(
-        &self,
-        buffer: &mut [u32],
-        depth_buffer: &mut [f32],
-        viewport_size: Vec2,
-    ) {
+    pub fn draw_clipped(&self, buffer: &mut [u32], depth_buffer: &mut [f32], viewport_size: Vec2) {
         let rec0 = 1.0 / self.vertices[0].position.w;
         let rec1 = 1.0 / self.vertices[1].position.w;
         let rec2 = 1.0 / self.vertices[2].position.w;
