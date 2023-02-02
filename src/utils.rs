@@ -51,7 +51,7 @@ where
     buffer.iter_mut().map(|x| *x = value).count();
 }
 
-pub fn edge_fn(p: Vec2, v0: Vec2, v1: Vec2) -> f32 {
+pub fn edge_fn(v1: Vec2, v0: Vec2, p: Vec2) -> f32 {
     (p.x - v0.x) * (v1.y - v0.y) - (p.y - v0.y) * (v1.x - v0.x)
 }
 
@@ -66,9 +66,9 @@ pub fn barycentric_coordinates(
     let a = 1.0 / area;
 
     // we can calculate 2 :) m0 + m1 + me = 1
-    let m0 = edge_fn(point, v1, v2) * a;
-    let m1 = edge_fn(point, v2, v0) * a;
-    let m2 = 1.0 - m0 - m1;
+    let m0 = edge_fn(v1, v2, point) * a;
+    let m1 = edge_fn(v2, v0, point) * a;
+    let m2 = edge_fn(v0, v1, point) * a;
 
     if m0 >= 0.0 && m1 >= 0.0 && m2 >= 0.0 {
         Some(glam::vec3(m0, m1, m2))

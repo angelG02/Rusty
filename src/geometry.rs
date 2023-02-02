@@ -12,18 +12,14 @@ pub struct AABB {
 
 impl AABB {
     pub fn new(vertices: &[Vec2; 3]) -> Self {
-        let v0 = vertices[0];
-        let v1 = vertices[1];
-        let v2 = vertices[2];
-
-        let xmax = f32::max(f32::max(v0.x, v1.x), v2.x);
-        let ymax = f32::max(f32::max(v0.y, v1.y), v2.y);
-        let xmin = f32::min(f32::min(v0.x, v1.x), v2.x);
-        let ymin = f32::min(f32::min(v0.y, v1.y), v2.y);
+        let left = vertices[0].x.min(vertices[1].x).min(vertices[2].x);
+        let right = vertices[0].x.max(vertices[1].x).max(vertices[2].x);
+        let bottom = vertices[0].y.min(vertices[1].y).min(vertices[2].y);
+        let top = vertices[0].y.max(vertices[1].y).max(vertices[2].y);
 
         AABB {
-            min: Vec2::new(xmin, ymin),
-            max: Vec2::new(xmax, ymax),
+            min: Vec2::new(left, bottom),
+            max: Vec2::new(right, top),
         }
     }
 
@@ -68,21 +64,18 @@ impl AABB {
 pub fn triangle_screen_bounding_box(positions: &[Vec2; 3], viewport_size: Vec2) -> Option<AABB> {
     let bb = AABB::new(positions);
 
-    if bb.max.x >= viewport_size.x
-        || bb.min.x < 0.0
-        || bb.min.y >= viewport_size.y
-        || bb.max.y < 0.0
+    if bb.min.x > viewport_size.x || bb.max.x < 0.0 || bb.min.y > viewport_size.y || bb.max.y < 0.0
     {
         None
     } else {
-        let left = bb.max.x.max(0.0);
-        let right = bb.min.x.min(viewport_size.x - 1.0);
-        let top = bb.max.y.max(0.0);
-        let bottom = bb.min.y.min(viewport_size.y - 1.0);
+        let left = bb.min.x.max(0.0);
+        let right = bb.max.x.min(viewport_size.x - 1.0);
+        let bottom = bb.min.y.max(0.0);
+        let top = bb.max.y.min(viewport_size.y - 1.0);
 
         Some(AABB {
-            min: Vec2 { x: right, y: bottom },
-            max: Vec2 { x: left, y: top },
+            min: Vec2 { x: left, y: bottom },
+            max: Vec2 { x: right, y: top },
         })
     }
 }
@@ -213,11 +206,26 @@ impl Triangle {
     pub fn reorder(&self, order: VerticesOrder) -> Self {
         match order {
             VerticesOrder::ABC => self.clone(),
-            VerticesOrder::ACB => Self::new_with_texture([self.vertices[0], self.vertices[2], self.vertices[1]], self.texture.clone().unwrap()),
-            VerticesOrder::BAC => Self::new_with_texture([self.vertices[1], self.vertices[0], self.vertices[2]], self.texture.clone().unwrap()),
-            VerticesOrder::BCA => Self::new_with_texture([self.vertices[1], self.vertices[2], self.vertices[0]], self.texture.clone().unwrap()),
-            VerticesOrder::CAB => Self::new_with_texture([self.vertices[2], self.vertices[0], self.vertices[1]], self.texture.clone().unwrap()),
-            VerticesOrder::CBA => Self::new_with_texture([self.vertices[2], self.vertices[1], self.vertices[0]], self.texture.clone().unwrap()),
+            VerticesOrder::ACB => Self::new_with_texture(
+                [self.vertices[0], self.vertices[2], self.vertices[1]],
+                self.texture.clone().unwrap(),
+            ),
+            VerticesOrder::BAC => Self::new_with_texture(
+                [self.vertices[1], self.vertices[0], self.vertices[2]],
+                self.texture.clone().unwrap(),
+            ),
+            VerticesOrder::BCA => Self::new_with_texture(
+                [self.vertices[1], self.vertices[2], self.vertices[0]],
+                self.texture.clone().unwrap(),
+            ),
+            VerticesOrder::CAB => Self::new_with_texture(
+                [self.vertices[2], self.vertices[0], self.vertices[1]],
+                self.texture.clone().unwrap(),
+            ),
+            VerticesOrder::CBA => Self::new_with_texture(
+                [self.vertices[2], self.vertices[1], self.vertices[0]],
+                self.texture.clone().unwrap(),
+            ),
         }
     }
 
@@ -261,7 +269,7 @@ impl Triangle {
 
             for x in (bounding_box.min.x as usize)..=bounding_box.max.x as usize {
                 for y in (bounding_box.min.y as usize)..=bounding_box.max.y as usize {
-                    let coords = glam::vec2(x as f32, y as f32);
+                    let coords = glam::vec2(x as f32, y as f32) + 0.5;
                     let pixel_id = coords_to_index(x, y, viewport_size.x as usize);
 
                     if let Some(bary) = barycentric_coordinates(coords, sc0, sc1, sc2, area) {
@@ -310,7 +318,6 @@ impl Object for Triangle {
         viewport_size: Vec2,
     ) {
         let clip_triangle = self.transform(mvp);
-
         match clip_cull_triangle(&clip_triangle) {
             ClipResult::None => {}
             ClipResult::One(tri) => {
@@ -401,19 +408,6 @@ pub fn clip_triangle_two(triangle: &Triangle) -> (Triangle, Triangle) {
     result_b.vertices[0] = v0_a;
     result_b.vertices[1] = v0_b;
 
-    let green = Vec4::new(0.0, 1.0, 0.0, 1.0);
-    let blue = Vec4::new(0.0, 0.0, 1.0, 1.0);
-
-    result_a.vertices[0].color = green;
-    result_a.vertices[1].color = green;
-    result_a.vertices[2].color = green;
-    result_b.vertices[0].color = blue;
-    result_b.vertices[1].color = blue;
-    result_b.vertices[2].color = blue;
-
-    // result_a.texture = triangle.texture.clone();
-    // result_b.texture = triangle.texture.clone();
-
     (result_a, result_b)
 }
 
@@ -453,8 +447,9 @@ pub fn cull_triangle_backface(triangle: &Triangle) -> bool {
 
 pub fn clip_cull_triangle(triangle: &Triangle) -> ClipResult {
     if cull_triangle_backface(triangle) {
-        ClipResult::None
-    } else if cull_triangle_view_frustum(triangle) {
+        return ClipResult::None;
+    }
+    if cull_triangle_view_frustum(triangle) {
         ClipResult::None
     } else {
         // clipping routines
