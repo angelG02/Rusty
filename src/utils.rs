@@ -38,12 +38,12 @@ where
 }
 
 pub fn clear_screen(buffer: &mut Vec<u32>, color: Vec4) {
-    for i in 0..buffer.len() {
-        buffer[i] = to_argb8(color.w as u8, color.x as u8, color.y as u8, color.z as u8);
+    for pixel in buffer {
+        *pixel = to_argb8(color.w as u8, color.x as u8, color.y as u8, color.z as u8);
     }
 }
 
-pub fn clear_buffer<T>(buffer: &mut Vec<T>, value: T)
+pub fn clear_buffer<T>(buffer: &mut [T], value: T)
 where
     T: Copy,
 {

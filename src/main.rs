@@ -100,7 +100,7 @@ fn main() {
     mesh2.add_texture(texture.clone());
     mesh3.add_texture(texture.clone());
     mesh4.add_texture(texture.clone());
-    mesh5.add_texture(texture.clone());
+    mesh5.add_texture(texture);
 
     let mut shapes: Vec<Box<dyn Object>> = vec![];
     shapes.push(Box::new(mesh0));
@@ -110,8 +110,7 @@ fn main() {
     shapes.push(Box::new(mesh4));
     shapes.push(Box::new(mesh5));
 
-    let mut win_opts = WindowOptions::default();
-    win_opts.resize = true;
+    let win_opts = WindowOptions { resize: true, ..Default::default() };
 
     let mut window =
         Window::new("Test - ESC to exit", WIDTH, HEIGHT, win_opts).unwrap_or_else(|e| {
@@ -145,9 +144,8 @@ fn main() {
             Transform::from_rotation(glam::Quat::from_euler(glam::EulerRot::XYZ, rot, 0.0, 0.0))
                 .local();
 
-        let mut i = 0;
         // Draw shapes
-        for shape in shapes.iter() {
+        for (i, shape) in shapes.iter().enumerate() {
             shape.draw(
                 &mut buffer,
                 &mut depth_buffer,
@@ -157,7 +155,6 @@ fn main() {
                     y: HEIGHT as f32,
                 },
             );
-            i += 1;
         }
         rot += 0.05;
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way

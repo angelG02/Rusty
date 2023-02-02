@@ -18,15 +18,13 @@ impl Texture {
         let image_pixels = decoded_image.pixels();
 
         let mut data: Vec<u32> = vec![];
-        let mut index = 0;
 
-        for (_width, _height, pixel) in image_pixels {
+        for (index, (_width, _height, pixel)) in image_pixels.enumerate() {
             let a = pixel.0[3];
             let r = pixel.0[0];
             let g = pixel.0[1];
             let b = pixel.0[2];
             data.insert(index, to_argb8(a, r, g, b));
-            index += 1;
         }
 
         Texture {

@@ -53,10 +53,10 @@ impl AABB {
     }
 
     pub fn intersects(&self, point: Vec2) -> bool {
-        point.x as f32 >= self.min.x
-            && point.x as f32 <= self.max.x
-            && point.y as f32 >= self.min.y
-            && point.y as f32 <= self.max.y
+        point.x >= self.min.x
+            && point.x <= self.max.x
+            && point.y >= self.min.y
+            && point.y <= self.max.y
     }
 }
 
@@ -231,8 +231,8 @@ impl Triangle {
 
     pub fn draw_clipped(
         &self,
-        buffer: &mut Vec<u32>,
-        depth_buffer: &mut Vec<f32>,
+        buffer: &mut [u32],
+        depth_buffer: &mut [f32],
         viewport_size: Vec2,
     ) {
         let rec0 = 1.0 / self.vertices[0].position.w;
@@ -574,17 +574,15 @@ impl Object for Circle {
                     + f64::powf((point.y - self.center.y) as f64, 2.0),
             );
 
-            if d <= self.radius.into() {
-                if self.center.z < depth_buffer[i] {
-                    depth_buffer[i] = self.center.z;
+            if d <= self.radius.into() && self.center.z < depth_buffer[i] {
+                depth_buffer[i] = self.center.z;
 
-                    buffer[i] = to_argb8(
-                        self.color.w as u8,
-                        self.color.x as u8,
-                        self.color.y as u8,
-                        self.color.z as u8,
-                    );
-                }
+                buffer[i] = to_argb8(
+                    self.color.w as u8,
+                    self.color.x as u8,
+                    self.color.y as u8,
+                    self.color.z as u8,
+                );
             }
         }
     }
