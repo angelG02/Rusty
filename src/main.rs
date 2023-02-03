@@ -17,7 +17,6 @@ fn main() {
         frustum_far: 100.0,
         ..Default::default()
     };
-
     let mut helmet: Model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
 
     let win_opts = WindowOptions {
@@ -26,7 +25,7 @@ fn main() {
     };
 
     let mut window =
-        Window::new("Test - ESC to exit", WIDTH, HEIGHT, win_opts).unwrap_or_else(|e| {
+        Window::new("Rusty", WIDTH, HEIGHT, win_opts).unwrap_or_else(|e| {
             panic!("{}", e);
         });
 

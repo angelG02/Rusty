@@ -30,6 +30,7 @@ impl Mesh {
 
     pub fn new_from_gltf(mesh: &gltf::Mesh, buffers: &[gltf::buffer::Data]) -> Mesh {
         let mut positions: Vec<Vec3> = Vec::new();
+        let mut normals: Vec<Vec3> = Vec::new();
         let mut tex_coords: Vec<Vec2> = Vec::new();
         let mut indices = vec![];
 
@@ -42,6 +43,9 @@ impl Mesh {
             }
             if let Some(positions_reader) = reader.read_positions() {
                 positions_reader.for_each(|p| positions.push(Vec3::new(p[0], p[1], p[2])));
+            }
+            if let Some(normals_reader) = reader.read_normals() {
+                normals_reader.for_each(|n| normals.push(Vec3::new(n[0], n[1], n[2])));
             }
             if let Some(tex_coord_reader) = reader.read_tex_coords(0) {
                 tex_coord_reader
@@ -59,7 +63,7 @@ impl Mesh {
                 .chunks_exact(3)
                 .map(|tri| UVec3::new(tri[0], tri[1], tri[2]))
                 .collect();
-            result.add_section_from_buffers(&triangles, &positions, &colors, &tex_coords)
+            result.add_section_from_buffers(&triangles, &positions, &normals, &colors, &tex_coords)
         }
 
         result
@@ -102,6 +106,7 @@ impl Mesh {
         &mut self,
         triangles: &[UVec3],
         positions: &[Vec3],
+        normals: &[Vec3],
         colors: &[Vec4],
         uvs: &[Vec2],
     ) {
@@ -113,6 +118,7 @@ impl Mesh {
         for i in 0..positions.len() {
             let vertex = Vertex::new(
                 positions[i].extend(1.0),
+                normals[i],
                 if has_colors { colors[i] } else { Vec4::ONE },
                 if has_uvs { uvs[i] } else { Vec2::ONE },
             );

@@ -4,7 +4,7 @@ use glam::{Mat4, Quat, Vec2, Vec3};
 use std::path::Path;
 
 pub struct Model {
-    meshes: Vec<Mesh>,
+    pub meshes: Vec<Mesh>,
     pub transform: Transform,
 }
 
