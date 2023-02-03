@@ -1,5 +1,5 @@
 use glam::{Vec2, Vec4};
-use minifb::{Key, Window, WindowOptions};
+use minifb::{Key, Window, WindowOptions, MouseButton};
 use std::path::Path;
 
 use rusterizer::*;
@@ -66,7 +66,12 @@ fn main() {
                 y: HEIGHT as f32,
             },
         );
-        rot += 1.0 * delta_time;
+        if window.get_mouse_down(MouseButton::Left) {
+            rot += 1.0 * delta_time;
+        } else if window.get_mouse_down(MouseButton::Right) {
+            rot -= 1.0 * delta_time;
+        }
+        
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }

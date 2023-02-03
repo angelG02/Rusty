@@ -321,7 +321,8 @@ impl Triangle {
 
                             let color = bary.x * v0.color + bary.y * v1.color + bary.z * v2.color;
                             let color = color * correction;
-                            let color = color * n_dot_1;
+                            let ambient = glam::vec4(0.2, 0.2, 0.2, 1.0);
+                            let color = color * n_dot_1 + ambient;
 
                             let mut color = to_argb8(
                                 255,
