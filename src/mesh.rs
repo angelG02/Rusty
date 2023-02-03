@@ -138,6 +138,7 @@ impl Object for Mesh {
         &self,
         buffer: &mut Vec<u32>,
         depth_buffer: &mut Vec<f32>,
+        model: &Mat4,
         mvp: &Mat4,
         viewport_size: Vec2,
     ) {
@@ -148,10 +149,10 @@ impl Object for Mesh {
                     triangle_vertices,
                     self.texture.as_ref().unwrap().clone(),
                 );
-                triangle.draw(buffer, depth_buffer, mvp, viewport_size);
+                triangle.draw(buffer, depth_buffer, model, mvp, viewport_size);
             } else {
                 let triangle = Triangle::new(triangle_vertices);
-                triangle.draw(buffer, depth_buffer, mvp, viewport_size);
+                triangle.draw(buffer, depth_buffer, model, mvp, viewport_size);
             }
         }
     }

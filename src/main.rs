@@ -24,10 +24,9 @@ fn main() {
         ..Default::default()
     };
 
-    let mut window =
-        Window::new("Rusty", WIDTH, HEIGHT, win_opts).unwrap_or_else(|e| {
-            panic!("{}", e);
-        });
+    let mut window = Window::new("Rusty", WIDTH, HEIGHT, win_opts).unwrap_or_else(|e| {
+        panic!("{}", e);
+    });
 
     // Limit to max ~60 fps update rate
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));

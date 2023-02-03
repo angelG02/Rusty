@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec3, Vec4, Mat4};
+use glam::{Mat4, Vec2, Vec3, Vec4};
 
 pub const WIDTH: usize = 640;
 pub const HEIGHT: usize = 360;

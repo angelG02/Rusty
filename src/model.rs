@@ -57,6 +57,7 @@ impl Model {
             mesh.draw(
                 buffer,
                 depth_buffer,
+                &self.transform.local(),
                 &(*mvp * self.transform.local()),
                 viewport_size,
             );

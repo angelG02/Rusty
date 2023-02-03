@@ -85,6 +85,7 @@ pub trait Object {
         &self,
         buffer: &mut Vec<u32>,
         depth_buffer: &mut Vec<f32>,
+        model: &Mat4,
         mvp: &Mat4,
         viewport_size: Vec2,
     );
@@ -313,8 +314,14 @@ impl Triangle {
                         if depth < depth_buffer[pixel_id] {
                             depth_buffer[pixel_id] = depth;
 
+                            let normal =
+                                bary.x * v0.normal + bary.y * v1.normal + bary.z * v2.normal;
+                            let normal = normal * correction;
+                            let n_dot_1 = normal.dot(Vec3::ONE.normalize());
+
                             let color = bary.x * v0.color + bary.y * v1.color + bary.z * v2.color;
                             let color = color * correction;
+                            let color = color * n_dot_1;
 
                             let mut color = to_argb8(
                                 255,
@@ -347,10 +354,20 @@ impl Object for Triangle {
         &self,
         buffer: &mut Vec<u32>,
         depth_buffer: &mut Vec<f32>,
+        model: &Mat4,
         mvp: &Mat4,
         viewport_size: Vec2,
     ) {
-        let clip_triangle = self.transform(mvp);
+        let cof_mat = cofactor(model);
+        let mut clip_triangle = self.transform(mvp);
+
+        clip_triangle.vertices[0].normal =
+            (cof_mat * clip_triangle.vertices[0].normal.extend(0.0)).xyz();
+        clip_triangle.vertices[1].normal =
+            (cof_mat * clip_triangle.vertices[1].normal.extend(0.0)).xyz();
+        clip_triangle.vertices[2].normal =
+            (cof_mat * clip_triangle.vertices[2].normal.extend(0.0)).xyz();
+
         match clip_cull_triangle(&clip_triangle) {
             ClipResult::None => {}
             ClipResult::One(tri) => {
@@ -543,6 +560,7 @@ impl Object for Quad {
         &self,
         buffer: &mut Vec<u32>,
         depth_buffer: &mut Vec<f32>,
+        model: &Mat4,
         mvp: &Mat4,
         viewport_size: Vec2,
     ) {
@@ -561,8 +579,8 @@ impl Object for Quad {
             let triangle1 = Triangle::new(triangle_vertices1);
             let triangle2 = Triangle::new(triangle_vertices2);
 
-            triangle1.draw(buffer, depth_buffer, mvp, viewport_size);
-            triangle2.draw(buffer, depth_buffer, mvp, viewport_size);
+            triangle1.draw(buffer, depth_buffer, model, mvp, viewport_size);
+            triangle2.draw(buffer, depth_buffer, model, mvp, viewport_size);
         } else {
             let triangle1 = Triangle::new_with_texture(
                 triangle_vertices1,
@@ -573,8 +591,8 @@ impl Object for Quad {
                 self.texture.as_ref().unwrap().clone(),
             );
 
-            triangle1.draw(buffer, depth_buffer, mvp, viewport_size);
-            triangle2.draw(buffer, depth_buffer, mvp, viewport_size);
+            triangle1.draw(buffer, depth_buffer, model, mvp, viewport_size);
+            triangle2.draw(buffer, depth_buffer, model, mvp, viewport_size);
         }
     }
 
@@ -594,6 +612,7 @@ impl Object for Circle {
         &self,
         buffer: &mut Vec<u32>,
         depth_buffer: &mut Vec<f32>,
+        _model: &Mat4,
         _mvp: &Mat4,
         _viewport_size: Vec2,
     ) {
