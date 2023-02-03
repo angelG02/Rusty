@@ -69,7 +69,7 @@ pub fn triangle_screen_bounding_box(positions: &[Vec2; 3], viewport_size: Vec2) 
         None
     } else {
         let left = bb.min.x.max(0.0);
-        let right = bb.max.x.min(viewport_size.x);
+        let right = bb.max.x.min(viewport_size.x - 1.0);
         let bottom = bb.min.y.max(0.0);
         let top = bb.max.y.min(viewport_size.y - 1.0);
 
@@ -320,28 +320,26 @@ impl Triangle {
                             let n_dot_1 = normal.dot(Vec3::ONE.normalize());
 
                             let color = bary.x * v0.color + bary.y * v1.color + bary.z * v2.color;
-                            let color = color * correction;
-                            let ambient = glam::vec4(0.2, 0.2, 0.2, 1.0);
-                            let color = color * n_dot_1 + ambient;
+                            let mut color = color * correction;
 
-                            let mut color = to_argb8(
+                            if let Some(tex) = &self.texture {
+                                let tex_coords = bary.x * v0.uv + bary.y * v1.uv + bary.z * v2.uv;
+                                let tex_coords = tex_coords * correction;
+                                color = tex.argb_at_uvf(tex_coords.x, tex_coords.y).yzw().extend(1.0);
+                            }
+
+                            let ambient = glam::vec4(0.2, 0.2, 0.2, 1.0);
+
+                            color = color * n_dot_1 + ambient;
+
+                            let out_color = to_argb8(
                                 255,
                                 (color.x * 255.0) as u8,
                                 (color.y * 255.0) as u8,
                                 (color.z * 255.0) as u8,
                             );
-
-                            if self.texture.is_some() {
-                                let tex_coords = bary.x * v0.uv + bary.y * v1.uv + bary.z * v2.uv;
-                                let tex_coords = tex_coords * correction;
-
-                                color = self
-                                    .texture
-                                    .as_ref()
-                                    .unwrap()
-                                    .argb_at_uv(tex_coords.x, tex_coords.y);
-                            }
-                            buffer[pixel_id] = color;
+                            
+                            buffer[pixel_id] = out_color;
                         }
                     }
                 }

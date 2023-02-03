@@ -1,5 +1,5 @@
 use glam::{Vec2, Vec4};
-use minifb::{Key, Window, WindowOptions, MouseButton};
+use minifb::{Key, MouseButton, Window, WindowOptions};
 use std::path::Path;
 
 use rusterizer::*;
@@ -13,11 +13,14 @@ fn main() {
     let mut camera = Camera {
         aspect_ratio,
         transform: Transform::from_translation(glam::vec3(0.0, 0.0, 5.0)),
-        frustum_near: 4.0,
+        frustum_near: 1.0,
         frustum_far: 100.0,
         ..Default::default()
     };
+
+    let texture = std::sync::Arc::new(Texture::load(std::path::Path::new("resources/models/SciFiHelmet/SciFiHelmet_BaseColor.png")));
     let mut helmet: Model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
+    helmet.meshes[0].add_texture(texture);
 
     let win_opts = WindowOptions {
         resize: true,
@@ -71,7 +74,7 @@ fn main() {
         } else if window.get_mouse_down(MouseButton::Right) {
             rot -= 1.0 * delta_time;
         }
-        
+
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
     }
