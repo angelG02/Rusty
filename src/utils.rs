@@ -1,4 +1,4 @@
-use glam::{Vec2, Vec3, Vec4};
+use glam::{Vec2, Vec3, Vec4, Mat4};
 
 pub const WIDTH: usize = 640;
 pub const HEIGHT: usize = 360;
@@ -86,4 +86,43 @@ where
         + Copy,
 {
     b1 + (v - a1) * (b2 - b1) / (a2 - a1)
+}
+
+//https://github.com/graphitemaster/normals_revisited
+pub fn minor(
+    src: &[f32; 16],
+    r0: usize,
+    r1: usize,
+    r2: usize,
+    c0: usize,
+    c1: usize,
+    c2: usize,
+) -> f32 {
+    src[4 * r0 + c0] * (src[4 * r1 + c1] * src[4 * r2 + c2] - src[4 * r2 + c1] * src[4 * r1 + c2])
+        - src[4 * r0 + c1]
+            * (src[4 * r1 + c0] * src[4 * r2 + c2] - src[4 * r2 + c0] * src[4 * r1 + c2])
+        + src[4 * r0 + c2]
+            * (src[4 * r1 + c0] * src[4 * r2 + c1] - src[4 * r2 + c0] * src[4 * r1 + c1])
+}
+
+pub fn cofactor(matrix: &Mat4) -> Mat4 {
+    let src: [f32; 16] = matrix.to_cols_array();
+    let mut dst: [f32; 16] = [0.0; 16];
+    dst[0] = minor(&src, 1, 2, 3, 1, 2, 3);
+    dst[1] = -minor(&src, 1, 2, 3, 0, 2, 3);
+    dst[2] = minor(&src, 1, 2, 3, 0, 1, 3);
+    dst[3] = -minor(&src, 1, 2, 3, 0, 1, 2);
+    dst[4] = -minor(&src, 0, 2, 3, 1, 2, 3);
+    dst[5] = minor(&src, 0, 2, 3, 0, 2, 3);
+    dst[6] = -minor(&src, 0, 2, 3, 0, 1, 3);
+    dst[7] = minor(&src, 0, 2, 3, 0, 1, 2);
+    dst[8] = minor(&src, 0, 1, 3, 1, 2, 3);
+    dst[9] = -minor(&src, 0, 1, 3, 0, 2, 3);
+    dst[10] = minor(&src, 0, 1, 3, 0, 1, 3);
+    dst[11] = -minor(&src, 0, 1, 3, 0, 1, 2);
+    dst[12] = -minor(&src, 0, 1, 2, 1, 2, 3);
+    dst[13] = minor(&src, 0, 1, 2, 0, 2, 3);
+    dst[14] = -minor(&src, 0, 1, 2, 0, 1, 3);
+    dst[15] = minor(&src, 0, 1, 2, 0, 1, 2);
+    Mat4::from_cols_array(&dst)
 }
