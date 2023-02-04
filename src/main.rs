@@ -91,15 +91,25 @@ fn main() {
         let raster_time = std::time::Instant::now();
 
         // Clear screen and depth buffer
-        let clear_color = Vec4::new(204.0, 255.0, 255.0, 0.0);
+        let clear_color = Vec4::new(0.0, 0.0, 0.0, 0.0);
 
         unsafe {
             // Multi-threaded clearing of the screen and depth buffers xddd
+            let mut color_offset = 0.0;
             let chunks = &mut *screen_buffer_chuncks.get();
             for chunk in chunks {
                 thread_pool.execute(move || {
-                    clear_screen(chunk, clear_color);
+                    clear_screen(
+                        chunk,
+                        Vec4::new(
+                            clear_color.x + color_offset,
+                            clear_color.y,
+                            clear_color.z + color_offset,
+                            clear_color.w,
+                        ),
+                    );
                 });
+                color_offset += 15.0;
             }
 
             let chunks = &mut *depth_buffer_chuncks.get();
