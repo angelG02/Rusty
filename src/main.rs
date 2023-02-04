@@ -43,7 +43,7 @@ fn main() {
         }
     }
 
-    let thread_pool = ThreadPool::new(32);
+    let thread_pool = ThreadPool::new(4);
 
     let texture = std::sync::Arc::new(Texture::load(std::path::Path::new(
         "resources/models/SciFiHelmet/SciFiHelmet_BaseColor.png",
@@ -115,7 +115,7 @@ fn main() {
             let chunks = &mut *depth_buffer_chuncks.get();
             for chunk in chunks {
                 thread_pool.execute(move || {
-                    clear_buffer(&mut *chunk, f32::INFINITY);
+                    clear_buffer(chunk, f32::INFINITY);
                 });
             }
         }

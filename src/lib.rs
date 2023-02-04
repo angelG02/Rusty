@@ -1,7 +1,6 @@
 //use glam::{Vec2, Vec3Swizzles};
 
 use std::{
-    cell::UnsafeCell,
     sync::{mpsc, Arc, Mutex},
     thread,
 };
@@ -93,7 +92,7 @@ impl Worker {
                 match message {
                     Ok(job) => {
                         //println!("Worker {id} got a job; executing.");
-    
+
                         job();
                     }
                     Err(_) => {
