@@ -44,16 +44,20 @@ fn main() {
         }
     }
 
-    let thread_pool = ThreadPool::new(16);
+    let thread_pool = ThreadPool::new(32);
 
     let texture = Arc::new(Texture::load(std::path::Path::new(
         "resources/models/SciFiHelmet/SciFiHelmet_BaseColor.png",
     )));
 
+    // let mut model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
+    // model.meshes[0].add_texture(Arc::clone(&texture));
+
     let objects: Arc<Mutex<Vec<Model>>> = Arc::new(Mutex::new(vec![]));
 
+    // Multi-threaded model loading
     let mut model_trans = Vec3::new(0.0, 0.0, 0.0);
-    for _i in 0..20 {
+    for _i in 0..15 {
         let objects = Arc::clone(&objects);
         let texture = Arc::clone(&texture);
         thread_pool.execute(move || {
@@ -92,25 +96,15 @@ fn main() {
         let raster_time = std::time::Instant::now();
 
         // Clear screen and depth buffer
-        let clear_color = Vec4::new(0.0, 0.0, 0.0, 0.0);
+        let clear_color = Vec4::new(204.0, 255.0, 255.0, 255.0);
 
         unsafe {
             // Multi-threaded clearing of the screen and depth buffers xddd
-            let mut color_offset = 0.0;
             let chunks = &mut *screen_buffer_chuncks.get();
             for chunk in chunks {
                 thread_pool.execute(move || {
-                    clear_screen(
-                        chunk,
-                        Vec4::new(
-                            clear_color.x + color_offset,
-                            clear_color.y,
-                            clear_color.z + color_offset,
-                            clear_color.w,
-                        ),
-                    );
+                    clear_screen(chunk, clear_color);
                 });
-                color_offset += 15.0;
             }
 
             let chunks = &mut *depth_buffer_chuncks.get();
@@ -140,6 +134,16 @@ fn main() {
                 );
             }
         }
+        // let mvp = camera.projection() * camera.view() * model.transform.local();
+        // model.draw(
+        //     buffer.get_mut(),
+        //     depth_buffer.get_mut(),
+        //     &mvp,
+        //     Vec2 {
+        //         x: WIDTH as f32,
+        //         y: HEIGHT as f32,
+        //     },
+        // );
 
         // Render-only time
         let raster_time = raster_time.elapsed().as_millis();
