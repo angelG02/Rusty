@@ -1,7 +1,8 @@
-use glam::{Vec2, Vec4};
-use minifb::{Key, MouseButton, Window, WindowOptions};
+use glam::{Vec2, Vec3, Vec4};
+use minifb::{Key, Window, WindowOptions};
 use std::cell::UnsafeCell;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 use rusterizer::*;
 
@@ -43,25 +44,27 @@ fn main() {
         }
     }
 
-    let thread_pool = ThreadPool::new(4);
+    let thread_pool = ThreadPool::new(16);
 
-    let texture = std::sync::Arc::new(Texture::load(std::path::Path::new(
+    let texture = Arc::new(Texture::load(std::path::Path::new(
         "resources/models/SciFiHelmet/SciFiHelmet_BaseColor.png",
     )));
-    let mut helmet: Model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
-    helmet.meshes[0].add_texture(texture);
 
-    // let helmet1: Model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
-    // let helmet2: Model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
-    // let helmet3: Model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
-    // let helmet4: Model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
+    let objects: Arc<Mutex<Vec<Model>>> = Arc::new(Mutex::new(vec![]));
 
-    // let mut helmets: Vec<Model> = vec![];
-    // helmets.push(helmet.clone());
-    // helmets.push(helmet1.clone());
-    // helmets.push(helmet2.clone());
-    // helmets.push(helmet3.clone());
-    // helmets.push(helmet4.clone());
+    let mut model_trans = Vec3::new(0.0, 0.0, 0.0);
+    for _i in 0..10 {
+        let objects = Arc::clone(&objects);
+        let texture = Arc::clone(&texture);
+        thread_pool.execute(move || {
+            let mut helm = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
+            helm.transform = Transform::from_translation(model_trans);
+            helm.meshes[0].add_texture(texture);
+
+            objects.lock().unwrap().push(helm);
+        });
+        model_trans.x += 1.0;
+    }
 
     let win_opts = WindowOptions {
         resize: false,
@@ -77,7 +80,7 @@ fn main() {
 
     let mut current_time = std::time::Instant::now();
 
-    let mut rot = std::f32::consts::FRAC_PI_4;
+    //let mut rot = std::f32::consts::FRAC_PI_4;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         // Calculate frame time (delta time)
@@ -122,30 +125,33 @@ fn main() {
         // Update
         camera.update(&window, delta_time);
 
-        helmet.transform =
-            Transform::from_rotation(glam::Quat::from_euler(glam::EulerRot::XYZ, 0.0, rot, 0.0));
-        let mvp = camera.projection() * camera.view() * helmet.transform.local();
+        if !objects.lock().unwrap().is_empty() {
+            let objects = Arc::clone(&objects);
+            for object in &*objects.lock().unwrap() {
+                let mvp = camera.projection() * camera.view() * object.transform.local();
 
-        // Draw shapes
-        helmet.draw(
-            buffer.get_mut(),
-            depth_buffer.get_mut(),
-            &mvp,
-            Vec2 {
-                x: WIDTH as f32,
-                y: HEIGHT as f32,
-            },
-        );
+                // Draw objects
+                object.draw(
+                    buffer.get_mut(),
+                    depth_buffer.get_mut(),
+                    &mvp,
+                    Vec2 {
+                        x: WIDTH as f32,
+                        y: HEIGHT as f32,
+                    },
+                );
+            }
+        }
 
         // Render-only time
         let raster_time = raster_time.elapsed().as_millis();
         println!("Render time: {raster_time}ms");
 
-        if window.get_mouse_down(MouseButton::Left) {
-            rot += 1.0 * delta_time;
-        } else if window.get_mouse_down(MouseButton::Right) {
-            rot -= 1.0 * delta_time;
-        }
+        // if window.get_mouse_down(MouseButton::Left) {
+        //     rot += 1.0 * delta_time;
+        // } else if window.get_mouse_down(MouseButton::Right) {
+        //     rot -= 1.0 * delta_time;
+        // }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         unsafe {
