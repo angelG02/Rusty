@@ -325,7 +325,10 @@ impl Triangle {
                             if let Some(tex) = &self.texture {
                                 let tex_coords = bary.x * v0.uv + bary.y * v1.uv + bary.z * v2.uv;
                                 let tex_coords = tex_coords * correction;
-                                color = tex.argb_at_uvf(tex_coords.x, tex_coords.y).yzw().extend(1.0);
+                                color = tex
+                                    .argb_at_uvf(tex_coords.x, tex_coords.y)
+                                    .yzw()
+                                    .extend(1.0);
                             }
 
                             let ambient = glam::vec4(0.2, 0.2, 0.2, 1.0);
@@ -338,7 +341,7 @@ impl Triangle {
                                 (color.y * 255.0) as u8,
                                 (color.z * 255.0) as u8,
                             );
-                            
+
                             buffer[pixel_id] = out_color;
                         }
                     }

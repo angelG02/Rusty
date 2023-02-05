@@ -3,6 +3,7 @@ use crate::{mesh::Mesh, Object};
 use glam::{Mat4, Quat, Vec2, Vec3};
 use std::path::Path;
 
+#[derive(Debug, Clone)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub transform: Transform,

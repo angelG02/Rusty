@@ -1,7 +1,7 @@
 use glam::{Mat4, Vec2, Vec3, Vec4};
 
-pub const WIDTH: usize = 640;
-pub const HEIGHT: usize = 360;
+pub const WIDTH: usize = 1080;
+pub const HEIGHT: usize = 720;
 
 pub fn index_to_coords(p: usize, width: usize) -> (usize, usize) {
     (p % width, p / width)
@@ -37,7 +37,7 @@ where
     start + (end - start) * alpha
 }
 
-pub fn clear_screen(buffer: &mut Vec<u32>, color: Vec4) {
+pub fn clear_screen(buffer: &mut [u32], color: Vec4) {
     for pixel in buffer {
         *pixel = to_argb8(color.w as u8, color.x as u8, color.y as u8, color.z as u8);
     }
