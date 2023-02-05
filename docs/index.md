@@ -24,11 +24,15 @@ BUass email: 210798@buas.nl
 > Make sure to showcase the coolest features implemented and mention what each media is showcasing.  
 > If you want to use videos, it's recommended to upload them on youtube instead of github and just embed them in this Markdown file.
 
+## Multi-threaded clearing of the screen
 ![Multi-threaded clearing of the screen](images/multithreaded-screen-clearing.png "Multi-threaded clearing of the screen")
 > Each thread is given a section of the screen buffer (divided into 16 strips) and a different color to clear it to
-> How it's done: https://github.com/angelG02/Rusty/blob/75648bb6ab17c1826d66480530338b7077e1715f/src/main.rs#L98
+> How it's done: https://github.com/angelG02/Rusty/blob/75648bb6ab17c1826d66480530338b7077e1715f/src/main.rs#L98-L114
 
+## Model Loading With Textures
 ![Model Loading With Textures](images/model-loading-with-textures.png "Model Loading With Textures")
 
+
+## Multi-threaded model loading in release
 ![Multi-threaded model loading in release](images/multi-threaded-model-loading.gif "Multi-threaded model loading in release")
 > Each thread is given a model to load and then pushes it into a vector of models. Only when that vector is not empty are the models drawn, unti then a model loaded on te main thread is drawn only (or it can be a loading screen or anything else that is easy to render and load). As I said, the difference is much more noticable in debug, where (if not multi-threaded) the window is not even displyed until all the models are loaded.
