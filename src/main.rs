@@ -17,7 +17,7 @@ fn main() {
 
     let mut camera = Camera {
         aspect_ratio,
-        transform: Transform::from_translation(glam::vec3(0.0, 0.0, 5.0)),
+        transform: Transform::from_translation(glam::vec3(5.0, 0.0, 20.0)),
         frustum_near: 1.0,
         frustum_far: 100.0,
         ..Default::default()
@@ -53,7 +53,7 @@ fn main() {
     let objects: Arc<Mutex<Vec<Model>>> = Arc::new(Mutex::new(vec![]));
 
     let mut model_trans = Vec3::new(0.0, 0.0, 0.0);
-    for _i in 0..10 {
+    for _i in 0..20 {
         let objects = Arc::clone(&objects);
         let texture = Arc::clone(&texture);
         thread_pool.execute(move || {
@@ -79,8 +79,6 @@ fn main() {
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
 
     let mut current_time = std::time::Instant::now();
-
-    //let mut rot = std::f32::consts::FRAC_PI_4;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         // Calculate frame time (delta time)
@@ -127,7 +125,7 @@ fn main() {
 
         if !objects.lock().unwrap().is_empty() {
             let objects = Arc::clone(&objects);
-            for object in &*objects.lock().unwrap() {
+            for object in &mut *objects.lock().unwrap() {
                 let mvp = camera.projection() * camera.view() * object.transform.local();
 
                 // Draw objects
@@ -146,12 +144,6 @@ fn main() {
         // Render-only time
         let raster_time = raster_time.elapsed().as_millis();
         println!("Render time: {raster_time}ms");
-
-        // if window.get_mouse_down(MouseButton::Left) {
-        //     rot += 1.0 * delta_time;
-        // } else if window.get_mouse_down(MouseButton::Right) {
-        //     rot -= 1.0 * delta_time;
-        // }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way
         unsafe {
