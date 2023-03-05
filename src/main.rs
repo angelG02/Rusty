@@ -1,8 +1,9 @@
 use glam::{Vec2, Vec4};
-use minifb::{Key, MouseButton, Window, WindowOptions};
-use std::path::Path;
+use minifb::{Key, Window, WindowOptions};
 
 use rusterizer::*;
+
+const SPEED: f32 = 2.0;
 
 fn main() {
     let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
@@ -18,10 +19,6 @@ fn main() {
         ..Default::default()
     };
 
-    let texture = std::sync::Arc::new(Texture::load(std::path::Path::new("resources/models/SciFiHelmet/SciFiHelmet_BaseColor.png")));
-    let mut helmet: Model = Model::new(Path::new("resources/models/SciFiHelmet/SciFiHelmet.gltf"));
-    helmet.meshes[0].add_texture(texture);
-
     let win_opts = WindowOptions {
         resize: true,
         ..Default::default()
@@ -36,7 +33,12 @@ fn main() {
 
     let mut current_time = std::time::Instant::now();
 
-    let mut rot = std::f32::consts::FRAC_PI_4;
+    let mut constant = Vec2 {
+        x: -1.2804998,
+        y: 0.05300001,
+    };
+
+    let mut scale_in = 0.0;
 
     while window.is_open() && !window.is_key_down(Key::Escape) {
         // Clear screen
@@ -50,29 +52,62 @@ fn main() {
         let delta_time = frame_time as f32 / 1000.0;
         current_time = new_time;
 
-        println!("Frame time: {frame_time}ms");
+        //println!("Frame time: {frame_time}ms");
 
         // Update
-        camera.update(&window, delta_time);
+        //camera.update(&window, delta_time);
 
-        helmet.transform =
-            Transform::from_rotation(glam::Quat::from_euler(glam::EulerRot::XYZ, 0.0, rot, 0.0));
-        let mvp = camera.projection() * camera.view() * helmet.transform.local();
-
-        // Draw shapes
-        helmet.draw(
+        // Draw fractal
+        fractal::draw(
             &mut buffer,
-            &mut depth_buffer,
-            &mvp,
             Vec2 {
                 x: WIDTH as f32,
                 y: HEIGHT as f32,
             },
+            constant,
+            scale_in,
         );
-        if window.get_mouse_down(MouseButton::Left) {
-            rot += 1.0 * delta_time;
-        } else if window.get_mouse_down(MouseButton::Right) {
-            rot -= 1.0 * delta_time;
+
+        if window.is_key_down(Key::Z) {
+            scale_in += delta_time * 50.0;
+        }
+
+        if window.is_key_down(Key::X) {
+            scale_in -= delta_time * 50.0;
+        }
+
+        if window.is_key_down(Key::W) {
+            constant.x += delta_time / SPEED;
+            println!("{:?}", constant)
+        }
+
+        if window.is_key_down(Key::S) {
+            constant.x -= delta_time / SPEED;
+            println!("{:?}", constant)
+        }
+
+        if window.is_key_down(Key::A) {
+            constant.y += delta_time / SPEED;
+            println!("{:?}", constant)
+        }
+
+        if window.is_key_down(Key::D) {
+            constant.y -= delta_time / SPEED;
+            println!("{:?}", constant)
+        }
+
+        if window.is_key_down(Key::Up) {
+            constant += delta_time / SPEED;
+            println!("{:?}", constant)
+        }
+
+        if window.is_key_down(Key::Down) {
+            constant -= delta_time / SPEED;
+            println!("{:?}", constant)
+        }
+
+        if window.is_key_down(Key::R) {
+            constant = Vec2 { x: 0.0, y: 0.0 };
         }
 
         // We unwrap here as we want this code to exit if it fails. Real applications may want to handle this in a different way

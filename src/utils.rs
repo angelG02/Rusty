@@ -1,7 +1,7 @@
 use glam::{Mat4, Vec2, Vec3, Vec4};
 
-pub const WIDTH: usize = 640;
-pub const HEIGHT: usize = 360;
+pub const WIDTH: usize = 1080;
+pub const HEIGHT: usize = 720;
 
 pub fn index_to_coords(p: usize, width: usize) -> (usize, usize) {
     (p % width, p / width)
@@ -9,6 +9,72 @@ pub fn index_to_coords(p: usize, width: usize) -> (usize, usize) {
 
 pub fn coords_to_index(x: usize, y: usize, width: usize) -> usize {
     x + y * width
+}
+
+//input: ratio is between 0.0 to 1.0
+//output: rgb color
+pub fn rgb(ratio: f32) -> u32 {
+    //we want to normalize ratio so that it fits in to 6 regions
+    //where each region is 256 units long
+    let normalized = ratio as i32 * 256 * 6;
+
+    //find teh refion for this position
+    let region = normalized / 256;
+
+    //find the distance to the start of the closest region
+    let x = normalized % 256;
+
+    let mut r: u32 = 0;
+    let mut g: u32 = 0;
+    let mut b: u32 = 0;
+
+    match region {
+        0 => {
+            r = 255;
+            g = 0;
+            b = 0;
+            g += x as u32;
+        }
+
+        1 => {
+            r = 255;
+            g = 255;
+            b = 0;
+            r -= x as u32;
+        }
+
+        2 => {
+            r = 0;
+            g = 255;
+            b = 0;
+            b += x as u32;
+        }
+
+        3 => {
+            r = 0;
+            g = 255;
+            b = 255;
+            g -= x as u32;
+        }
+
+        4 => {
+            r = 0;
+            g = 0;
+            b = 255;
+            r += x as u32;
+        }
+
+        5 => {
+            r = 255;
+            g = 0;
+            b = 255;
+            b -= x as u32;
+        }
+
+        _ => {}
+    }
+
+    r + (g << 8) + (b << 16)
 }
 
 pub fn to_argb8(a: u8, r: u8, g: u8, b: u8) -> u32 {
